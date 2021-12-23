@@ -19,12 +19,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if event.user_id !=853330464:
         return 0
     if event.message_type == "private":
-        import os
-        path = os.getcwd()
         img_path = "file:///D://QQ//Bot//nonebot//moribot//定向回复//+10.jpg"
         
         await bot.send(event=event,message=MessageSegment.image(file = img_path+""))
-        await moritest.finish(os.getcwd()+"\+10.jpg")
+        await moritest.finish()
     else:
         if event.group_id == "180707407":
             await moritest.finish(str(event.user_id))

@@ -33,11 +33,12 @@ def save(us):
 main_folder=os.getcwd()
 main_folder2='D:/QQ/Bot/General分支(1.0.1)(1)/General分支(1.0.1)(1)/兔子-db包/用户数据/'
 def user_sign_in(QQ):
-    msg_box = "茉莉还在学习中，未连接到数据库！\n"
-    us=pd.read_csv(main_folder2+'userdata.csv',skiprows=0,header=None).values
+    msg_box = "<茉莉还在学习中！不会写入主数据库！>\n"
+    us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
     for row in range(us.shape[0]):
         if us[row,1]!=QQ:
             continue
+        exp=0
         if us[row,4]==3:    #7日奖励签到
             import random
             exp=random.randrange(1,11,1)       
@@ -53,10 +54,10 @@ def user_sign_in(QQ):
             elif exp==10:
                 msg_box+='哇，茉莉也好想要这样的好运！经验+'+str(exp)+'\n'
             us[row,4]=1
-        elif us[row,4]!=0:
+        elif us[row,4]!=0: #已签到
             msg_box+='你今天已经签到过啦！还想偷偷再签一次？'+'\n'
-            msg_box+='【今日已有{int(np.sum(us[:,4]))}人签到,大家的平均运气为{round(np.sum(us[:,7])/np.sum(us[:,4]),1)}】'+'\n'
-        else:
+            msg_box+='【今日已有'+str(np.sum(us[:,4]))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
+        else:#正常签到
             import random
             exp=random.randrange(1,11,1)
             us[row,3]+=exp
@@ -72,17 +73,16 @@ def user_sign_in(QQ):
                 msg_box+='吸吸吸，经验+'+str(exp)+'\n'
             elif exp==10:
                 msg_box+='哇，茉莉也好想要这样的好运！经验+'+str(exp)+'\n'
-                #print('{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\+10.jpg}')
 
             us[row,8]+=1
             msg_box+='【已连续签到'+str(int(us[row,8]))+'天】'+'\n'
             if (us[row,8]%7==0):#7日奖励签到
                 week=int(us[row,8])//7
-                print('【已连续签到'+str(week)+'周,奖励可再签到一次，同时额外经验+'+str(week*3)+'】')
+                msg_box+='【已连续签到'+str(week)+'周,奖励可再签到一次，同时额外经验+'+str(week*3)+'】'+'\n'
                 us[row,3]+=week*3
                 us[row,4]=3
                 
-            msg_box+=f'【今日已有{int(np.sum(us[:,4]))}人签到,大家的平均运气为{round(np.sum(us[:,7])/np.sum(us[:,4]),1)}】'+'\n'
+            msg_box+='【今日已有'+str(np.sum(us[:,4]))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
 
             if np.sum(us[:,4])==1:
                 us[row,3]+=5
@@ -94,8 +94,9 @@ def user_sign_in(QQ):
                 us[row,3]+=1
                 msg_box+='【作为今日第三名签到者，额外经验+1！】'+'\n'
         save(us)
+        return msg_box,exp
     msg_box+='茉莉这里还没你的档案呢，要先注册才行哦'+'\n'
-    return msg_box
+    return msg_box,-1
 
 def reboot():
     main_folder=os.getcwd()
