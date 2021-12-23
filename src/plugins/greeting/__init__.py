@@ -29,12 +29,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         +"目前进度：学习基础语法中......"
     await morisama.finish(text)
 
-###
-hello = on_command("你好", rule=to_me(), priority=5,block=True)
 
-@hello.handle()
-async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    await hello.finish("欢迎回来")
 
 
 
