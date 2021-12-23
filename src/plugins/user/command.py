@@ -31,9 +31,8 @@ def save(us):
 
 #print('茉莉正在高速处理信息中...')
 main_folder=os.getcwd()
-main_folder2='D:/QQ/Bot/General分支(1.0.1)(1)/General分支(1.0.1)(1)/兔子-db包/用户数据/'
 def user_sign_in(QQ):
-    msg_box = "<茉莉还在学习中！不会写入主数据库！>\n"
+    msg_box = ""
     us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
     for row in range(us.shape[0]):
         if us[row,1]!=QQ:
@@ -56,7 +55,7 @@ def user_sign_in(QQ):
             us[row,4]=1
         elif us[row,4]!=0: #已签到
             msg_box+='你今天已经签到过啦！还想偷偷再签一次？'+'\n'
-            msg_box+='【今日已有'+str(np.sum(us[:,4]))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
+            msg_box+='【今日已有'+str(int(np.sum(us[:,4])))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
         else:#正常签到
             import random
             exp=random.randrange(1,11,1)
@@ -82,7 +81,7 @@ def user_sign_in(QQ):
                 us[row,3]+=week*3
                 us[row,4]=3
                 
-            msg_box+='【今日已有'+str(np.sum(us[:,4]))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
+            msg_box+='【今日已有'+str(int(np.sum(us[:,4])))+'人签到,大家的平均运气为'+str(round(np.sum(us[:,7])/np.sum(us[:,4]),1))+'】'+'\n'
 
             if np.sum(us[:,4])==1:
                 us[row,3]+=5
@@ -100,7 +99,7 @@ def user_sign_in(QQ):
 
 def reboot():
     main_folder=os.getcwd()
-    us=pd.read_csv(main_folder+'/userdata.csv',skiprows=0,header=None).values
+    us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
     for row in range(us.shape[0]):
         if us[row,4]==0:
             us[row,8]=0
@@ -108,7 +107,7 @@ def reboot():
         us[row,7]=0
 
     ##save
-    with open(main_folder+'/userdata.csv','w') as file:
+    with open(main_folder+'userdata.csv','w') as file:
         for row in range(us.shape[0]):
             file.write(str(us[row,0]))
             for column in range(1,us.shape[1]):
