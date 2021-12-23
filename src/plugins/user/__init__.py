@@ -15,7 +15,7 @@ accept_group = [180707407,931790051,697981760]
 accept_group_test = [180707407,931790051]
 
 ###每日重启
-user_restart = on_command("每日重启",rule=to_me(), priority=1, permission=SUPERUSER,block=True)
+user_restart = on_command("每日重启", priority=1, permission=SUPERUSER,block=True)
 
 @user_restart.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):

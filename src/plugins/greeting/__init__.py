@@ -13,6 +13,7 @@ from nonebot.adapters import Bot, Event
 global_config = get_driver().config
 config = Config(**global_config.dict())
 
+
 ###
 mori = on_command("茉莉酱", rule=startswith('茉莉酱'), priority=7,block=True)
 
