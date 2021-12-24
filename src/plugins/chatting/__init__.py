@@ -1,11 +1,11 @@
 # import nonebot
 
 
-from nonebot import get_driver
+from nonebot import get_driver, permission
 
 from .config import Config
 
-from nonebot import on_command,on_notice
+from nonebot import on_regex,on_command,on_notice,on_message
 from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
@@ -28,25 +28,23 @@ def isallow(group,level):#检验许可
 img_path = "file:///D://QQ//Bot//定向回复//"
 
 ##az|啊这
-chat = on_command("az", priority=5,block=True)
+chat = on_regex("az", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event.group_id,2):
         await chat.finish()
-        
     from random import choice
     msg = choice(['啊这','别az了，你只会az吗？',MessageSegment.at(event.user_id)+'你又在az了，休息一下好不好'])
     await bot.send(event=event,message=msg)
     await chat.finish()
     
-chat = on_command("啊这", priority=5,block=True)
+chat = on_regex("啊这", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event.group_id,2):
         await chat.finish()
-        
     from random import choice
     msg = choice(['az','别啊这了，你只会啊这吗？',MessageSegment.at(event.user_id)+'你又在啊这了，休息一下好不好'])
     await bot.send(event=event,message=msg)
@@ -54,7 +52,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 
 
 ##?
-chat = on_command("?",aliases={"？","问号"},priority=5,block=True)
+chat = on_regex("\?|？|问号",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -70,7 +68,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
     
 ##草
-chat = on_command("草",aliases={"艹"},priority=5,block=True)
+chat = on_regex("草|艹",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -84,9 +82,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
     
-
 ##贴贴
-chat = on_command("茉莉贴贴",aliases={"贴贴茉莉"},priority=5,block=True)
+chat = on_regex("茉莉贴贴|贴贴茉莉",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -102,20 +99,43 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
 
+moriat = on_message(rule = to_me(),priority=10)
 
-##贴贴
-chat = on_notice(rule = to_me(),priority=5,block=True)
-
-@chat.handle()
+@moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event.group_id,2):
         await chat.finish()
         
+    #发情模式
+    msg=str(event.message)
+    if isallow(event.group_id,3):
+        import numpy as np
+        import random
+        chatlist = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()
+        if msg in chatlist:
+            returnmsg=random.choice(chatlist[msg])
+            await bot.send(event=event,message=returnmsg)
+            await chat.finish()    
+            
+    await bot.send(event=event,message="是..在找我吗？")
+    await chat.finish()    
+    
+##贴贴
+'''
+async def _poke_me(bot: Bot, event: Event, state: dict):
+    return (event.detail_type == 'notify' and event.sub_type == 'poke' and
+            str(event.raw_event['target_id']) == bot.self_id)
+
+poke_me = on_notice(_poke_me, priority=10)
+
+@poke_me.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event.group_id,2):
+        await poke_me.finish("SSS")
+        
     from random import choice
     msg = choice(['是在@我吗？'])
     await bot.send(event=event,message=msg)
-    await chat.finish()
-
-'''
+    await poke_me.finish("AAA")
 
 '''
