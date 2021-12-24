@@ -10,9 +10,6 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
-## 参数
-accept_group = [180707407,931790051,697981760,904318344,740835470]
-
 ###
 img_path = "file:///D://QQ//Bot//定向回复//随机包"
 
@@ -46,12 +43,20 @@ pic_dict = {
     '壁纸':['壁纸']
 }
 
+#初始函数
+def isallow(group,level):#检验许可
+    import numpy as np
+    if np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()[group]<level:
+        return False
+    else: 
+        return True
+
 ###随机图片
 randomfig = on_startswith("随机", priority=3,block=True)
 @randomfig.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if event.group_id not in accept_group:
-        return 0
+    if not isallow(event.group_id,2):
+        await randomfig.finish()
     pic_type = str(event.message)[2:]
     if pic_type == "图片":
         msg_build = count_figure()

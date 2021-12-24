@@ -19,7 +19,6 @@ moritest = on_message(rule = to_me(),permission=SUPERUSER,priority=10)
 @moritest.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event,message="茉莉学习中")
-    await bot.send(event,message=str(event.message))
     if event.user_id !=853330464:
         return 0
     await bot.send(event,message=event.message_type)

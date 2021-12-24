@@ -15,6 +15,8 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 global_config = get_driver().config
 config = Config(**global_config.dict())
 
+from nonebot.permission import SUPERUSER
+
 #初始函数
 def isallow(group,level):#检验许可
     import numpy as np
@@ -28,7 +30,7 @@ def isallow(group,level):#检验许可
 img_path = "file:///D://QQ//Bot//定向回复//"
 
 ##az|啊这
-chat = on_regex("az", priority=5,block=True)
+chat = on_regex("^az$", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -39,7 +41,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
     
-chat = on_regex("啊这", priority=5,block=True)
+chat = on_regex("^啊这$", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -52,7 +54,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 
 
 ##?
-chat = on_regex("\?|？|问号",priority=5,block=True)
+chat = on_regex("^？$|^问号$|^\?$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -62,13 +64,13 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from random import choice
     at = MessageSegment.at(event.user_id)
     msg = choice(['?','？',"问号","需要茉莉酱帮忙吗？","有想问的直接说出来啊，扭扭捏捏地干什么","需要我帮你查核心数据库吗？", 
-        at+"在纠结些什么呢？",MessageSegment.image(img_path+"?//(1).jpg"),MessageSegment.image(img_path+"?//(2).jpg"),\
-        MessageSegment.image(img_path+"?//(3).jpg"),MessageSegment.image(img_path+"?//(1).png")])
+        at+"在纠结些什么呢？",MessageSegment.image(img_path+"问号//a (1).jpg"),MessageSegment.image(img_path+"问号//a (2).jpg"),
+        MessageSegment.image(img_path+"问号//a (3).jpg"),MessageSegment.image(img_path+"问号//a (1).png")])
     await bot.send(event=event,message=msg)
     await chat.finish()
     
 ##草
-chat = on_regex("草|艹",priority=5,block=True)
+chat = on_regex("^草$|^艹$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -83,7 +85,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
     
 ##贴贴
-chat = on_regex("茉莉贴贴|贴贴茉莉",priority=5,block=True)
+chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -99,29 +101,56 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
 
-moriat = on_message(rule = to_me(),priority=10)
+moriat = on_message(rule = to_me(),priority=5,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event.group_id,2):
         await chat.finish()
-        
+    
     #发情模式
     msg=str(event.message)
     if isallow(event.group_id,3):
         import numpy as np
         import random
-        chatlist = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()
+        chatlist = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//chatting//chatlist.npy',allow_pickle=True).item()
         if msg in chatlist:
             returnmsg=random.choice(chatlist[msg])
             await bot.send(event=event,message=returnmsg)
             await chat.finish()    
-            
-    await bot.send(event=event,message="是..在找我吗？")
+    
+    #正常模式
+    from random import choice
+    msg = choice(['不要@我，我...会手足无措的','[非标准命令格式，读取失败]',"[正在数据库寻找合理回复，搜索中..搜索中...Zzzzzz] ",
+    "我能感受你想找我聊天啦！ ", "好啦好啦，我都知道了~", "@什么@，仙狐大人也是你能@的吗？", "找我会不会有很重要的事呢？一定要及时报告主人",
+    "心烦意乱 惴惴不安 惶恐不安 提心吊胆","要查数据库好好查，@来@去成何体统","@关键词是没有用的！直接问就行了","是...在找我吗？",
+    MessageSegment.image(img_path+"@//1.jpg"),MessageSegment.image(img_path+"@//12.jpg"),MessageSegment.image(img_path+"@//服务器无响应.jpg"),
+    MessageSegment.image(img_path+"@//咳咳咳喵.jpg"),MessageSegment.image(img_path+"@//女仆.jpg"),MessageSegment.image(img_path+"@//偷瞄.jpg"),
+    MessageSegment.image(img_path+"@//自闭模式.jpg")
+    ])  
+    await bot.send(event=event,message=msg)
     await chat.finish()    
     
 ##贴贴
 '''
+不要@我，我...会手足无措的
+|[非标准命令格式，读取失败]
+|[正在数据库寻找合理回复，搜索中..搜索中...Zzzzzz] 
+|我能感受你想找我聊天啦！
+|好啦好啦，我都知道了
+|@什么@，仙狐大人也是你能@的吗？
+|找我会不会有很重要的事呢？一定要及时报告主人
+|心烦意乱 惴惴不安 惶恐不安 提心吊胆
+|要查数据库好好查，@来@去成何体统
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\服务器无响应.jpg}
+|@关键词是没有用的！直接问就行了
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\这点事.jpg}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\女仆.jpg}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\咳咳咳喵.jpg}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\自闭模式.jpg}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\偷瞄.jpg}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\1.png}
+|{发送图片,D:\QQ\Bot\General分支(1.0.1)(1)\General分支(1.0.1)(1)\兔子-db包\娱乐\定向回复\@\12.jpg}
 async def _poke_me(bot: Bot, event: Event, state: dict):
     return (event.detail_type == 'notify' and event.sub_type == 'poke' and
             str(event.raw_event['target_id']) == bot.self_id)
