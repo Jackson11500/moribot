@@ -29,6 +29,23 @@ def isallow(group,level):#检验许可
 ##参数
 img_path = "file:///D://QQ//Bot//定向回复//"
 
+##戳一戳
+async def _poke_me(bot: Bot, event: Event, state: dict):
+    return event.notice_type == 'notify' and event.sub_type == 'poke' and str(event.target_id) == bot.self_id
+
+pokeme = on_notice(_poke_me, priority=5,block=True)
+
+@pokeme.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event.group_id,2):
+        await pokeme.finish()
+    from random import choice
+    msg = choice(['唔...别摸了，毛都要给撸秃了','摸起来舒服吗',"不行那里不可以(´///ω/// `)",  "变态！！不许乱摸",
+                  "好吧~_~，就一下下哦……唔~好了……都两下了……(害羞)", "真是好奇怪的要求的说～","温柔一点哦"
+                  ])
+    await bot.send(event=event,message=msg)
+    await pokeme.finish()
+
 ##az|啊这
 chat = on_regex("^az$", priority=5,block=True)
 

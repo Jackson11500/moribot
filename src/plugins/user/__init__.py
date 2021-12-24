@@ -3,7 +3,7 @@ from nonebot import get_driver
 
 global_config = get_driver().config
 
-from nonebot import on_command
+from nonebot import on_command,on_regex
 from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
@@ -15,7 +15,7 @@ accept_group = [180707407,931790051,697981760]
 accept_group_test = [180707407,931790051]
 
 ###每日重启
-user_restart = on_command("每日重启", priority=1, permission=SUPERUSER,block=True)
+user_restart = on_regex("^每日重启$", priority=1, permission=SUPERUSER,block=True)
 
 @user_restart.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -25,7 +25,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_restart.finish("")
     
 ###签到
-user_signin = on_command("签到", priority=1,block=True)
+user_signin = on_regex("^签到$", priority=1,block=True)
 
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
