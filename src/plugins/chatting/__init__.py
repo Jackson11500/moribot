@@ -5,7 +5,7 @@ from nonebot import get_driver
 
 from .config import Config
 
-from nonebot import on_command
+from nonebot import on_command,on_notice
 from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
@@ -103,7 +103,18 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 
+##贴贴
+chat = on_notice(rule = to_me(),priority=5,block=True)
 
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event.group_id,2):
+        await chat.finish()
+        
+    from random import choice
+    msg = choice(['是在@我吗？'])
+    await bot.send(event=event,message=msg)
+    await chat.finish()
 
 '''
 

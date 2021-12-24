@@ -24,6 +24,7 @@ nonebot.load_builtin_plugins()
 nonebot.load_from_toml("pyproject.toml")
 
 nonebot.load_plugin("nonebot_plugin_test")
+nonebot.load_plugin("nonebot_plugin_youthstudy")
 nonebot.load_plugins("src/plugins")
 
 # Modify some config / config depends on loaded configs
