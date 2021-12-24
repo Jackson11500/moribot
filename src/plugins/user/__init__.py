@@ -27,6 +27,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_restart.finish("")
     
 ###签到
+
 user_signin = on_regex("^签到$", priority=1,block=True)
 
 @user_signin.handle()
@@ -36,7 +37,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await user_signin.finish()
     msg,score = command.user_sign_in(event.user_id)
     if score == 10:
-        await bot.send(event=event,message=MessageSegment.image(file = "file:///D://QQ//Bot//nonebot//moribot//定向回复//+10.jpg"))
-    await bot.send(event=event,message=MessageSegment.reply(event.message_id)+msg)
+        msg = MessageSegment.reply(event.message_id)+msg+MessageSegment.image(file = "file:///D://QQ//Bot//定向回复//+10.jpg")
+    else:
+        msg = MessageSegment.reply(event.message_id)+msg
+    await bot.send(event=event,message=msg)
     await user_signin.finish()
-

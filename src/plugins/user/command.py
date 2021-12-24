@@ -17,6 +17,7 @@ QQ
 连续签到次数
 '''
 import os
+from nonebot import permission
 import pandas as pd
 import numpy as np
 
@@ -30,7 +31,7 @@ def save(us):
             file.write('\n')
 
 #print('茉莉正在高速处理信息中...')
-main_folder=os.getcwd()
+main_folder=os.getcwd()+'/src/plugins/user/'
 def user_sign_in(QQ):
     msg_box = ""
     us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
