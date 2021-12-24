@@ -10,6 +10,8 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
+from src.plugins.__toolbox import isallow
+
 ###
 img_path = "file:///D://QQ//Bot//定向回复//随机包"
 
@@ -43,13 +45,7 @@ pic_dict = {
     '壁纸':['壁纸']
 }
 
-#初始函数
-def isallow(group,level):#检验许可
-    import numpy as np
-    if np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()[group]<level:
-        return False
-    else: 
-        return True
+
 
 ###随机图片
 randomfig = on_startswith("随机", priority=3,block=True)
@@ -75,6 +71,8 @@ figintro = on_command("投稿图片指南", priority=3,block=True)
 
 @figintro.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event.group_id,1):
+        await randomfig.finish()
     msg = '你也想投稿图片吗？非常欢迎哦~\n\
 · 如果你想添加3张及以下的图片，直接加茉莉好友然后私发给茉莉就行啦！\n\
 · 但如果想一次添加3张以上的大量图片，请先自行打包成压缩包，随后直接发给lc，或者发到群里@lc或是茉莉都行！\n\

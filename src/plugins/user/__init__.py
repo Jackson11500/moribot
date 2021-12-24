@@ -11,6 +11,8 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
+from src.plugins.__toolbox import isallow
+
 accept_group = [180707407,931790051,697981760]
 accept_group_test = [180707407,931790051]
 
@@ -30,8 +32,8 @@ user_signin = on_regex("^签到$", priority=1,block=True)
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import src.plugins.user.command as command
-    if event.group_id not in accept_group:
-        return 0
+    if not isallow(event.group_id,1):
+        await user_signin.finish()
     msg,score = command.user_sign_in(event.user_id)
     if score == 10:
         await bot.send(event=event,message=MessageSegment.image(file = "file:///D://QQ//Bot//nonebot//moribot//定向回复//+10.jpg"))
