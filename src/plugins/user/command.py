@@ -95,11 +95,10 @@ def user_sign_in(QQ):
                 msg_box+='【作为今日第三名签到者，额外经验+1！】'+'\n'
         save(us)
         return msg_box,exp
-    msg_box+='茉莉这里还没你的档案呢，要先注册才行哦'+'\n'
+    msg_box+='茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
     return msg_box,-1
 
 def reboot():
-    main_folder=os.getcwd()
     us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
     for row in range(us.shape[0]):
         if us[row,4]==0:
@@ -116,16 +115,39 @@ def reboot():
             file.write('\n')
 
     return 'Fox News:茉莉的签到已重置'
+
+def signup(QQ):
+    msg_box = ""
+    us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
+    for row in range(us.shape[0]):
+        if us[row,1]==QQ:
+            return 0
+    us=np.row_stack((us,np.zeros((1,us.shape[1]))))
+    import time
+    us[row+1,:3]=[row+1,QQ,int(round(time.time() * 1000))]
+    save(us)
+    return row+2
 #command=pd.read_csv(main_folder+'command_log.txt',header=None).values[-1,:]
 #us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
 '''
+
+
+    ##save
+    with open(main_folder+'userdata.csv','w') as file:
+        for row in range(us.shape[0]):
+            file.write(str(us[row,0]))
+            for column in range(1,us.shape[1]):
+                file.write(','+str(us[row,column]))
+            file.write('\n')
+
+    return 'Fox News:茉莉的签到已重置'
 if __name__ == "__main__":
     #注册系统
     if command[0]==0:
         row=0
         for row in range(us.shape[0]):
             if us[row,1]==command[1]:
-                print('你已经注册过啦，还发。是想数据清空再注册一次吗')
+                print('')
                 exit()
 
         us=np.row_stack((us,np.zeros((1,us.shape[1]))))

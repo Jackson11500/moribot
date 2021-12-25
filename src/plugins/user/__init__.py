@@ -27,8 +27,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_restart.finish("")
     
 ###签到
-
-user_signin = on_regex("^签到$", priority=1,block=True)
+user_signin = on_regex("^签到$", priority=2,block=True)
 
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -40,5 +39,21 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         msg = MessageSegment.reply(event.message_id)+msg+MessageSegment.image(file = "file:///D://QQ//Bot//定向回复//+10.jpg")
     else:
         msg = MessageSegment.reply(event.message_id)+msg
+    await bot.send(event=event,message=msg)
+    await user_signin.finish()
+
+###签到
+user_signin = on_regex("^注册$", priority=2,block=True)
+
+@user_signin.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    import src.plugins.user.command as command
+    if not isallow(event.group_id,1):
+        await user_signin.finish()
+    par = command.signup(event.user_id)
+    if par == 0:
+        msg = MessageSegment.reply(event.message_id)+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
+    else:
+        msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
     await user_signin.finish()
