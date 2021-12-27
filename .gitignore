@@ -7,6 +7,7 @@ userdata.csv
 .env.dev
 .env.prod
 chatlist.npy
+chatlist2.npy
 group_status.npy
 __group_status.py
 group_status.npy

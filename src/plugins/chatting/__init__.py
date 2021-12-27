@@ -110,7 +110,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##贴贴
-chat = on_regex("^寄吧|几把$",priority=5,block=True)
+chat = on_regex("(^寄吧$)|(^几把$)",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -152,6 +152,15 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
             await bot.send(event=event,message=returnmsg)
             await chat.finish()    
     
+    elif isallow(event,2):
+        import numpy as np
+        import random
+        chatlist = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//chatting//chatlist2.npy',allow_pickle=True).item()
+        if msg in chatlist:
+            returnmsg=random.choice(chatlist[msg])
+            await bot.send(event=event,message=returnmsg)
+            await chat.finish()    
+            
     #正常模式
     from random import choice
     msg = choice(['不要@我，我...会手足无措的','[非标准命令格式，读取失败]',"[正在数据库寻找合理回复，搜索中..搜索中...Zzzzzz] ",
@@ -163,8 +172,3 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     ])  
     await bot.send(event=event,message=msg)
     await chat.finish()    
-    
-##贴贴
-'''
-
-'''
