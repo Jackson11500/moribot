@@ -14,7 +14,6 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 from src.plugins.__toolbox import isallow
 
 ## 参数
-accept_group = [180707407,931790051,697981760,904318344,740835470]
 img_path = "file:///D://QQ//Bot//mdt-数据//计算向//"
 
 

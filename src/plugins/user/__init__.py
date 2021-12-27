@@ -13,9 +13,6 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
 from src.plugins.__toolbox import isallow
 
-accept_group = [180707407,931790051,697981760]
-accept_group_test = [180707407,931790051]
-
 ###每日重启
 user_restart = on_regex("^每日重启$", priority=1, permission=SUPERUSER,block=True)
 

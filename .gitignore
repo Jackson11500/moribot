@@ -10,6 +10,7 @@ chatlist.npy
 group_status.npy
 __group_status.py
 group_status.npy
+bot.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
