@@ -70,7 +70,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await res_logic.finish()
 
 ###颜色列表
-res_color = on_regex("^颜色列表$", priority=3,block=True)
+res_color = on_regex("(^颜色列表$)|(^颜色大全$)", priority=3,block=True)
 
 @res_color.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):

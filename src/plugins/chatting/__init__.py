@@ -61,7 +61,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
 
-
 ##?
 chat = on_regex("^？$|^问号$|^\?$",priority=5,block=True)
 
@@ -77,7 +76,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         MessageSegment.image(img_path+"问号//a (3).jpg"),MessageSegment.image(img_path+"问号//a (1).png")])
     await bot.send(event=event,message=msg)
     await chat.finish()
-    
+
 ##草
 chat = on_regex("^草$|^艹$",priority=5,block=True)
 
@@ -121,6 +120,17 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from random import choice
     msg = choice([MessageSegment.image(img_path+"几把//1.jpg"),MessageSegment.image(img_path+"几把//2.jpg"),'不可以说脏话~'])
     await bot.send(event=event,message=msg)
+    await chat.finish()
+
+chat = on_regex("114514|1919810|哼哼啊啊啊",priority=5,block=True)
+
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await chat.finish()
+    from random import choice
+    at = MessageSegment.at(event.user_id)
+    await bot.send(event=event,message=MessageSegment.image(img_path+"哼哼喵.jpg"))
     await chat.finish()
 
 #@茉莉
