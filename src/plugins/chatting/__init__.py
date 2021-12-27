@@ -128,7 +128,7 @@ moriat = on_message(rule = to_me(),priority=5,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event.group_id,2):
+    if not isallow(event,2):
         await chat.finish()
     
     #发情模式

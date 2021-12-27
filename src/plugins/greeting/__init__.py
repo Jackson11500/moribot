@@ -90,10 +90,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     #成功切换
     group_status[event.group_id] = switch_mode
     np.save('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',group_status)
-    await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...")
-    
     if switch_mode>=2:
         await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉')
     else:
         await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉 '+str(modename[switch_mode])+'中...')
+    await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...")
     await morisama.finish()

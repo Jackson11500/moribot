@@ -81,8 +81,24 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await res_color.finish()
     
 
-def get_forward_msg(bot,source_file,msg):
+def get_forward_msg(bot,event,source_file):
+    source = ""
+    f = open(img_path+"type//"+source_file)
+    line = f.readline()
+    while line:
+        if len(line)>=5:
+            source+=line
+        line = f.readline()
+    f.close()
+    
     msg_list = []
+    sender = {
+    "type": "node",
+    "data": {
+        "id":str(event.message_id)
+    },
+    }
+    msg_list.append(sender)
     source_data = {
     "type": "node",
     "data": {
@@ -97,7 +113,7 @@ def get_forward_msg(bot,source_file,msg):
     "data": {
         "name": f"无所不知茉莉酱",
         "uin": f"{bot.self_id}",
-        "content": msg,
+        "content": source,
     },
     }
     msg_list.append(data)
@@ -123,15 +139,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     source_file =  str(event.get_message()).lower()
     import os
     if os.path.exists(img_path+"type//"+source_file):
-        source = ""
-        f = open(img_path+"type//"+source_file)
-        line = f.readline()
-        while line:
-            if len(line)>=5:
-                source+=line
-            line = f.readline()
-        f.close()
-        await bot.send_group_forward_msg(group_id=event.group_id,messages = get_forward_msg(bot,source_file,source))
+        await bot.send_group_forward_msg(group_id=event.group_id,messages = get_forward_msg(bot,event,source_file))
     else:
         await bot.send(event = event, message = "茉莉找不到这个源码！会不会是你输错了呢？")
     await source_code.finish()
