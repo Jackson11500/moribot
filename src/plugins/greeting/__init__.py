@@ -77,7 +77,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if switch_mode >=4:
         await bot.send(event=event,message=f"新的状态还在学习中哦~~")
         await morisama.finish()
-        
+
     if switch_mode <0:
         await bot.send(event=event,message=choice["baka，再乱输我就不理你了，哼！","冬眠已经是最低功耗态啦~","呜呜，你是想让茉莉永远消失嘛"])
         await morisama.finish()    
