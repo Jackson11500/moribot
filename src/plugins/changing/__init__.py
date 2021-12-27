@@ -58,7 +58,7 @@ change_catgirl = on_command("变猫娘",priority=3,block=True)
 
 @change_catgirl.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event.group_id,2):
+    if not isallow(event,2):
         await change_catgirl.finish()
     sb = At(event.json())
     if sb == ['all']:

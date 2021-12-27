@@ -26,6 +26,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 * 实用资料\n\
 * 图片管家（随机图片...）\n\
 * 个人信息管理（签到...）\n\
+* 源码查询(源码：mono)\n\
 茉莉现在和以前不同啦，会和大家进行更多的互动，并且可以通过模式设置来调整哦\n\
 输入'茉莉状态'以设置模式！"
     await morisama.finish(text)
@@ -42,16 +43,20 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 
     await morisama.finish()
 
-##
+##状态说明
 morisama = on_regex("^茉莉状态说明$", priority=2,block=True)
 
 @morisama.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    await bot.send(event=event,message="茉莉当前共有4种状态：\n冬眠状态[0]：除了呼唤与修改状态指定外忽视一切命令\n打盹状态[1]：仅接受主动呼唤\n游玩状态[2]：会积极参与聊天中\n？未知状态[3]：想知道吗？不告诉你~")
+    await bot.send(event=event,message="茉莉当前共有4种状态：\n\
+冬眠状态[0]：除了呼唤与修改状态指定外忽视一切指令\n\
+打盹状态[1]：仅会接受主动呼唤相关的内容\n\
+游玩状态[2]：会积极主动参与聊天中\n\
+？未知状态[3]：暂时不开放哦")
     await morisama.finish()
 
-##
-morisama = on_command("茉莉状态切换", priority=2,block=True)
+##状态切换
+morisama = on_command("茉莉状态切换",aliases={'茉莉状态设置'}, priority=2,block=True)
 
 @morisama.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -71,7 +76,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await morisama.finish()
     
     if switch_mode == 3 and not event.user_id == 853330464:
-        await bot.send(event=event,message=f"有些状态不可能公开的！")
+        await bot.send(event=event,message=f"有些状态是不可能公开的！<羞羞~~>")
         await morisama.finish()
         
     if switch_mode >=4:
@@ -79,11 +84,16 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await morisama.finish()
 
     if switch_mode <0:
-        await bot.send(event=event,message=choice["baka，再乱输我就不理你了，哼！","冬眠已经是最低功耗态啦~","呜呜，你是想让茉莉永远消失嘛"])
+        await bot.send(event=event,message=choice["baka，再乱输我就不理你了，哼！","冬眠已经是最低功耗态啦~","呜呜，你是想让茉莉永远消失嘛~"])
         await morisama.finish()    
     
+    #成功切换
     group_status[event.group_id] = switch_mode
     np.save('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',group_status)
-    await bot.send(event=event,message=f"茉莉当前状态：[{switch_mode}]{modename[switch_mode]}中...\n切换模式请输入以下命令：\n茉莉状态切换:id")
-    #await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card=f'小狐狸茉莉')
+    await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...")
+    
+    if switch_mode>=2:
+        await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉')
+    else:
+        await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉 '+str(modename[switch_mode])+'中...')
     await morisama.finish()
