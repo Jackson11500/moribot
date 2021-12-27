@@ -11,6 +11,7 @@ group_status.npy
 __group_status.py
 group_status.npy
 bot.py
+*.npy
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
