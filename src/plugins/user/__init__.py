@@ -32,7 +32,7 @@ user_signin = on_regex("^签到$", priority=2,block=True)
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import src.plugins.user.command as command
-    if not isallow(event.group_id,1):
+    if not isallow(event,1):
         await user_signin.finish()
     msg,score = command.user_sign_in(event.user_id)
     if score == 10:
@@ -48,7 +48,7 @@ user_signin = on_regex("^注册$", priority=2,block=True)
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import src.plugins.user.command as command
-    if not isallow(event.group_id,1):
+    if not isallow(event,1):
         await user_signin.finish()
     par = command.signup(event.user_id)
     if par == 0:

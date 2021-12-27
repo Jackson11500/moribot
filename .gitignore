@@ -2,6 +2,15 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
+#user-design
+userdata.csv
+.env.dev
+.env.prod
+chatlist.npy
+group_status.npy
+__group_status.py
+group_status.npy
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
