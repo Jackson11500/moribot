@@ -66,6 +66,7 @@ res_logic = on_regex("^逻辑大全$", priority=3,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,1):
         await reslist.finish()
+    img_path = "file:///D://QQ//Bot//mdt-数据//计算向//"
     await bot.send(event=event,message="是小撒姐姐做的哦~非常的实用呢\n"+MessageSegment.image(file = img_path+"逻辑介绍.jfif"))
     await res_logic.finish()
 
@@ -76,7 +77,8 @@ res_color = on_regex("(^颜色列表$)|(^颜色大全$)", priority=3,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,1):
         await reslist.finish()
-    await bot.send(event=event,message="Way_Zer调出来的！\n"+MessageSegment.image(file = img_path+"搞颜色.png"))
+    img_path = "file:///D://QQ//Bot//mdt-数据//计算向//"
+    await bot.send(event=event,message="Way_Zer调出来的！"+MessageSegment.image(file = img_path+"搞颜色.png"))
     await res_color.finish()
     
 

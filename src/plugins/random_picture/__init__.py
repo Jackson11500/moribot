@@ -41,8 +41,7 @@ pic_dict = {
     'BlueArchive':['BA','BlueArchive','ba'],
     'AA':['AA','AscixArt'],
     
-    '群星':['科幻','stellaris','群星'],
-    '壁纸':['壁纸']
+    '群星':['科幻','stellaris','群星']
 }
 
 

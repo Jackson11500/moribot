@@ -71,7 +71,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         
     from random import choice
     at = MessageSegment.at(event.user_id)
-    msg = choice(['?','？',"问号","需要茉莉酱帮忙吗？","有想问的直接说出来啊，扭扭捏捏地干什么","需要我帮你查核心数据库吗？", 
+    msg = choice(['?','¿','？',"问号","需要茉莉酱帮忙吗？","有想问的直接说出来啊，扭扭捏捏地干什么","需要我帮你查核心数据库吗？", 
         at+"在纠结些什么呢？",MessageSegment.image(img_path+"问号//a (1).jpg"),MessageSegment.image(img_path+"问号//a (2).jpg"),
         MessageSegment.image(img_path+"问号//a (3).jpg"),MessageSegment.image(img_path+"问号//a (1).png")])
     await bot.send(event=event,message=msg)
