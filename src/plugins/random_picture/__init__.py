@@ -54,6 +54,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
         await randomfig.finish()
     pic_type = str(event.message)[2:]
+    if len(pic_type)>7:
+        await randomfig.finish()
     if pic_type == "图片":
         msg_build = count_figure()
         await randomfig.finish(msg_build)
