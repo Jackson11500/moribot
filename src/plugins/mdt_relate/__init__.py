@@ -88,7 +88,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##
-chat = on_regex("mdt|(滚|不玩)",priority=5,block=True)
+chat = on_regex("mdt*(滚|不玩)",priority=5,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):

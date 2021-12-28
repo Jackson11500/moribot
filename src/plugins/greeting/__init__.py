@@ -33,13 +33,14 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 
 ##
 morisama = on_regex("^茉莉状态$", priority=2,block=True)
+modename = {0:"冬眠",1:"打盹",2:"游玩",3:"发情"}
+modedes = {0:"除了呼唤与修改状态指定外忽视一切指令",1:"仅会接受主动呼唤相关的内容",2:"会积极主动参与聊天中",3:"开放隐藏对话"}
 
 @morisama.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import numpy as np
     mode = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()[event.group_id]
-    modename = {0:"冬眠",1:"打盹",2:"游玩",3:"发情"}
-    await bot.send(event=event,message=f"茉莉当前状态：[{mode}]{modename[mode]}中...\n如果想切换模式，请输入：\n茉莉状态切换 id\n如果想了解各状态功能，请输入：\n茉莉状态说明")
+    await bot.send(event=event,message=f"茉莉当前状态：[{mode}]{modename[mode]}中...\n({modedes[mode]})\n如果想切换模式，请输入：\n茉莉状态切换 id\n如果想了解各状态功能，请输入：\n茉莉状态说明")
 
     await morisama.finish()
 
@@ -64,7 +65,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import numpy as np
     group_status = np.load('D://QQ//Bot//nonebot//moribot//src//plugins//group_status.npy',allow_pickle=True).item()
     mode = group_status[event.group_id]
-    modename = {0:"冬眠",1:"打盹",2:"游玩",3:"发情"}
     try:
         switch_mode = int(str(event.get_message()).split()[-1][-1])
     except TypeError:
@@ -72,7 +72,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await morisama.finish()
     
     if switch_mode == mode:
-        await bot.send(event=event,message=f"茉莉已经是这个状态啦！你还想怎样~~")
+        await bot.send(event=event,message=f"茉莉已经是这个状态啦！你还想怎样~~\n({modedes[switch_mode]})")
         await morisama.finish()
     
     if switch_mode == 3 and not event.user_id == 853330464:
@@ -94,5 +94,5 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉')
     else:
         await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉 '+str(modename[switch_mode])+'中...')
-    await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...")
+    await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...\n({modedes[switch_mode]})")
     await morisama.finish()
