@@ -98,6 +98,13 @@ def user_sign_in(QQ):
     msg_box+='茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
     return msg_box,-1
 
+def backup():
+    import time
+    from shutil import copyfile
+    localtime = time.localtime(time.time())
+    copyfile(main_folder+'userdata.csv', main_folder+f'backup/{localtime.tm_mon}_{localtime.tm_mday}userdata.csv')
+    return '文件已备份'
+
 def reboot():
     us=pd.read_csv(main_folder+'userdata.csv',skiprows=0,header=None).values
     for row in range(us.shape[0]):
@@ -113,6 +120,8 @@ def reboot():
             for column in range(1,us.shape[1]):
                 file.write(','+str(us[row,column]))
             file.write('\n')
+    
+    backup()
 
     return 'Fox News:茉莉的签到已重置'
 

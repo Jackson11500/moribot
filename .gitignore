@@ -3,7 +3,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 #user-design
-userdata.csv
+*userdata.csv
 .env.dev
 .env.prod
 chatlist.npy
