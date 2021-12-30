@@ -4,7 +4,7 @@ from nonebot import get_driver
 global_config = get_driver().config
 
 from nonebot import on_command,on_regex
-from nonebot.rule import to_me,startswith
+from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 from nonebot.permission import SUPERUSER
@@ -24,34 +24,33 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_restart.finish("")
     
 ###签到
-user_signin = on_regex("^签到$", priority=2,block=True)
+user_signin = on_command("签到",rule=endswith("签到"), priority=3,block=True)
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    await bot.send(event=event,message='新用户系统删档测试中...将于2022年正式上线！')
-    await user_signin.finish()
-    import src.plugins.user.command as command
+    #await bot.send(event=event,message='新用户系统删档测试中...将于2022年正式上线！')
     if not isallow(event,1):
         await user_signin.finish()
-    msg,score = command.user_sign_in(event.user_id)
-    if score == 10:
-        msg = MessageSegment.reply(event.message_id)+msg+MessageSegment.image(file = "file:///D://QQ//Bot//定向回复//+10.jpg")
+    import src.plugins.user.user_data as us
+    text = await us.user_sign_in(bot=bot, event=event, state=state)
+    import os 
+    if (os.path.exists(text)):
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+text))
     else:
-        msg = MessageSegment.reply(event.message_id)+msg
-    #await bot.send(event=event,message='茉莉正在重做整理用户系统！将于明年上线正式版，敬请期待\n')
-    #await user_signin.finish()
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+text)
+    await user_signin.finish()
 
 ###签到
-user_signin = on_regex("^注册$", priority=2,block=True)
+user_register = on_command("注册",rule=endswith("注册"), priority=3,block=True)
 
-@user_signin.handle()
+@user_register.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    import src.plugins.user.user_data as us
     if not isallow(event,1):
-        await user_signin.finish()
+        await user_register.finish()
+    import src.plugins.user.user_data as us
     par = us.register(event.user_id)
     if par==0:
         msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
     else:
         msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
-    await user_signin.finish()
+    await user_register.finish()
