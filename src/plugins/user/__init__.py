@@ -25,9 +25,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
 ###签到
 user_signin = on_regex("^签到$", priority=2,block=True)
-
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    await bot.send(event=event,message='新用户系统删档测试中...将于2022年正式上线！')
+    await user_signin.finish()
     import src.plugins.user.command as command
     if not isallow(event,1):
         await user_signin.finish()
@@ -36,21 +37,21 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         msg = MessageSegment.reply(event.message_id)+msg+MessageSegment.image(file = "file:///D://QQ//Bot//定向回复//+10.jpg")
     else:
         msg = MessageSegment.reply(event.message_id)+msg
-    await bot.send(event=event,message=msg)
-    await user_signin.finish()
+    #await bot.send(event=event,message='茉莉正在重做整理用户系统！将于明年上线正式版，敬请期待\n')
+    #await user_signin.finish()
 
 ###签到
 user_signin = on_regex("^注册$", priority=2,block=True)
 
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    import src.plugins.user.command as command
+    import src.plugins.user.user_data as us
     if not isallow(event,1):
         await user_signin.finish()
-    par = command.signup(event.user_id)
-    if par == 0:
-        msg = MessageSegment.reply(event.message_id)+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
+    par = us.register(event.user_id)
+    if par==0:
+        msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
     else:
-        msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
+        msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
     await user_signin.finish()

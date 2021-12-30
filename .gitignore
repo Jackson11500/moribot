@@ -3,7 +3,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 #user-design
-*userdata.csv
+*userdata*
 .env.dev
 .env.prod
 chatlist.npy
@@ -13,6 +13,7 @@ __group_status.py
 group_status.npy
 bot.py
 *.npy
+resources
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
