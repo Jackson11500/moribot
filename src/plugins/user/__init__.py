@@ -14,12 +14,12 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 from src.plugins.__toolbox import isallow
 
 ###每日重启
-user_restart = on_regex("^每日重启$", priority=1, permission=SUPERUSER,block=True)
+user_restart = on_command("数据备份",rule=endswith("数据备份"), priority=1, permission=SUPERUSER,block=True)
 
 @user_restart.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    import src.plugins.user.command as command
-    msg = command.reboot()
+    import src.plugins.user.user_data as us
+    msg = us.backup()
     await bot.send(event=event,message=msg)
     await user_restart.finish("")
     

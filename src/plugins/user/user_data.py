@@ -50,7 +50,7 @@ def return_level_icon_path(level:int):
     '''
     返回等级图标所在的文件夹，但这一文件不一定存在
     '''
-    unittype = ['alpha','beta','gamma',
+    unittype = ['','alpha','beta','gamma',
                 'dagger','nova','crawler','flare','mono','risso','retusa',
                 'mace','pulsar','atrax','horizon','poly','minke','oxynoe',
                 'fortress','quasar','spiroct','zenith','mega','bryde','cyerce',
@@ -339,7 +339,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(255, 105, 180))  # 材料        
     
     background = background.convert("RGB")
-    saveloc = sign_pic_path+f"\\user\\{QQ}_{today}_{nowtime.hour}.jpg"
+    saveloc = sign_pic_path+f"\\user\\{QQ}_{today}.jpg"
     background.save(saveloc, 'JPEG')
     
     return saveloc
