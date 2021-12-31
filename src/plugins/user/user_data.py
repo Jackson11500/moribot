@@ -17,7 +17,7 @@ def backup():
     import time
     from shutil import copyfile
     localtime = time.localtime(time.time())
-    copyfile(main_folder+'userdata.csv', main_folder+f'backup/{localtime.tm_mon}_{localtime.tm_mday}userdata.csv')
+    copyfile(main_folder+'userdata.csv', main_folder+f'backup/{localtime.tm_mon}_{localtime.tm_mday}__{localtime.tm_hour}userdata.csv')
     return '文件已备份'
 
 from nonebot.adapters.cqhttp.bot import Bot
@@ -103,7 +103,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         df_us.loc[QQ,'exp']+=exp
         while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
             df_us.loc[QQ,'level']+=1
-        bonus = df_us.loc[QQ].level*0.01
+        bonus = (df_us.loc[QQ].level+exp)*0.01
 
         if exp==10:
             bonus*=2

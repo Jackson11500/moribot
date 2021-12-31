@@ -38,7 +38,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 
     for index in range(len(says)//10+1):
         ImageDraw.Draw(luxun_fig).text(xy=(int(luxun_fig.width/2), int(luxun_fig.height*2/3)+index*30),
-                                        text=says[int(index*10):int(min(len(says),index*10+9))], font=msjh_text_font, align='center',anchor='mm',
+                                        text=says[int(index*10):int(min(len(says),index*10+9)+1)], font=msjh_text_font, align='center',anchor='mm',
                                         fill=(256, 256, 256))
 
     for index in range(len(says)//10+1):
