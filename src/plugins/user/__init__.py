@@ -28,6 +28,8 @@ user_signin = on_command("签到",rule=endswith("签到"), priority=3,block=True
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     #await bot.send(event=event,message='新用户系统删档测试中...将于2022年正式上线！')
+    await bot.send(event=event,message='新用户系统将于2022年1月1日正式上线，敬请期待！')
+    await user_signin.finish()
     if not isallow(event,1):
         await user_signin.finish()
     import src.plugins.user.user_data as us
@@ -44,13 +46,15 @@ user_register = on_command("注册",rule=endswith("注册"), priority=3,block=Tr
 
 @user_register.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    await bot.send(event=event,message='新用户系统将于2022年1月1日正式上线，敬请期待！')
+    await user_signin.finish()
     if not isallow(event,1):
         await user_register.finish()
     import src.plugins.user.user_data as us
     par = us.register(event.user_id)
     if par==0:
-        msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
+        msg = MessageSegment.reply(event.message_id)+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
     else:
-        msg = MessageSegment.reply(event.message_id)+'新用户系统删档测试中...将于2022年正式上线！\n'+f"注册成功！你是第{par}位成为茉莉朋友的人！"
+        msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
     await user_register.finish()

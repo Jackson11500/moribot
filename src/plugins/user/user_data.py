@@ -339,9 +339,10 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         text='@小狐狸茉莉', font=ruanmeng_text_font, align='middle',anchor='lb',
                                         fill=(255, 105, 180))  # 材料    
     
-    ImageDraw.Draw(background).text(xy=(int(width_edge), int(width_edge)),
-                                        text='新用户系统删档测试中...将于2022年正式上线！', font=ruanmeng_text_font, align='left',anchor='lt',
-                                        fill=(255, 105, 180))  # 材料        
+    #ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, width // 20)
+    #ImageDraw.Draw(background).text(xy=(int(width_edge), int(width_edge)),
+    #                                    text='新用户系统删档测试中...将于2022年1月1日正式上线！', font=ruanmeng_text_font, align='left',anchor='lt',
+    #                                    fill=(255, 105, 180))  # 材料        
     
     background = background.convert("RGB")
     saveloc = sign_pic_path+f"\\user\\{QQ}_{today}.jpg"
