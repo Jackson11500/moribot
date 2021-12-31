@@ -112,6 +112,24 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##贴贴
+chat = on_regex("^吸狐狸$",priority=5,block=True)
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await chat.finish()
+    await bot.send(event=event,message=MessageSegment.image(img_path+"吸狐狸.jpg"))
+    await chat.finish()
+
+##贴贴
+chat = on_regex("火星了",priority=5,block=True)
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await chat.finish()
+    await bot.send(event=event,message=MessageSegment.image(img_path+"火星了.jpg"))
+    await chat.finish()
+
+##
 chat = on_regex("(^寄吧$)|(^几把$)",priority=5,block=True)
 
 @chat.handle()
@@ -124,6 +142,30 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
 
+##
+chat = on_regex("笨蛋",priority=5,block=True)
+
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await chat.finish()
+        
+    from random import choice
+    await bot.send(event=event,message=MessageSegment.image(img_path+"找笨蛋.jpg"))
+    await chat.finish()
+
+##
+chat = on_regex("^救命啊$",priority=5,block=True)
+
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await chat.finish()
+        
+    from random import choice
+    await bot.send(event=event,message=MessageSegment.image(img_path+"救命啊.jpg"))
+    await chat.finish()
+
 chat = on_regex("114514|1919810|哼哼啊啊啊",priority=5,block=True)
 
 @chat.handle()
@@ -131,8 +173,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
         await chat.finish()
     from random import choice
-    at = MessageSegment.at(event.user_id)
-    await bot.send(event=event,message=MessageSegment.image(img_path+"哼哼喵.jpg"))
+    msg = choice([MessageSegment.image(img_path+"哼哼喵.jpg"),MessageSegment.image(img_path+"哼哼啊.jpg")])
+    await bot.send(event=event,message=MessageSegment.image(img_path+msg))
     await chat.finish()
 
 #@茉莉

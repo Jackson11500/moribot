@@ -120,8 +120,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         
         cu = int(random.random()*20*(1+bonus))
         pd = int(random.random()*15*(1+bonus))
-        ti = int(random.random()*3*(1+bonus*2))
-        th += int(random.random()*0.5*(1+bonus*2))
+        ti = int(random.random()*3*(1+bonus))
+        th += int(random.random()*0.6*(1+bonus))
         df_us.loc[QQ,'cu']+=cu
         df_us.loc[QQ,'pd']+=pd
         df_us.loc[QQ,'ti']+=ti

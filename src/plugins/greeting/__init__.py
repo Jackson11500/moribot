@@ -6,7 +6,7 @@ from nonebot import get_driver
 from .config import Config
 
 from nonebot import on_command,on_regex
-from nonebot.rule import to_me,startswith
+from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
@@ -16,7 +16,7 @@ config = Config(**global_config.dict())
 from src.plugins.__toolbox import isallow
 
 ###
-morisama = on_regex("^茉莉酱!$|^茉莉酱！$", priority=2,block=True)
+morisama = on_regex("(^茉莉酱$)|(^茉莉酱!$)|(^茉莉酱！$)", priority=2,block=True)
 
 @morisama.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -32,7 +32,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await morisama.finish(text)
 
 ##
-morisama = on_regex("^茉莉状态$", priority=2,block=True)
+morisama = on_command("茉莉状态",endswith('茉莉状态'), priority=2,block=True)
 modename = {0:"冬眠",1:"打盹",2:"游玩",3:"发情"}
 modedes = {0:"除了呼唤与修改状态指定外忽视一切指令",1:"仅会接受主动呼唤相关的内容",2:"会积极主动参与聊天中",3:"开放隐藏对话"}
 
