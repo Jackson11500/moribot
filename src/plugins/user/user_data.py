@@ -10,7 +10,16 @@ def register(QQ):
     else:
         import time
         df_us = df_us.append(pd.Series(data={'registertime':round(time.time())},name = QQ)).fillna(0)
-        df_us.to_csv(main_folder+'userdata.csv')
+        
+        #save
+        import time
+        while True:
+            if time.time() - int(open(main_folder+'time', 'r').read()) <2:
+                time.sleep(0.2)
+                continue
+            df_us.to_csv(main_folder+'userdata.csv')
+            open(main_folder+'time', 'w').write(str(int(time.time())))
+            break
         return df_us.shape[0]
 
 def backup():
@@ -96,7 +105,6 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         if week == int(week):
             th = week
             df_us.loc[QQ,'exp']+=3*week
-            df_us.loc[QQ,'th']+=th
         #计算随机经验
         exp=random.randrange(1,11,1)    
         df_us.loc[QQ,'signinexp'] = exp
@@ -110,14 +118,24 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         if week == int(week):
             bonus*=2
         
-        cu = int(random.randrange(1,21,1)*(1+bonus))
-        pd = int(random.randrange(1,16,1)*(1+bonus))
+        cu = int(random.random()*20*(1+bonus))
+        pd = int(random.random()*15*(1+bonus))
         ti = int(random.random()*3*(1+bonus*2))
+        th += int(random.random()*0.5*(1+bonus*2))
         df_us.loc[QQ,'cu']+=cu
         df_us.loc[QQ,'pd']+=pd
         df_us.loc[QQ,'ti']+=ti
-        df_us.to_csv(main_folder+'userdata.csv')
-    
+        df_us.loc[QQ,'th']+=th
+        
+        #避免冲突保存
+        import time
+        while True:
+            if time.time() - int(open(main_folder+'time', 'r').read()) <2:
+                time.sleep(0.2)
+                continue
+            df_us.to_csv(main_folder+'userdata.csv')
+            open(main_folder+'time', 'w').write(str(int(time.time())))
+            break
     
     #完成所有处理，开始画图
     from PIL import Image, ImageDraw, ImageFont
