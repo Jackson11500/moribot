@@ -1,32 +1,24 @@
 import pandas as pd
-#columns=['registertime','exp','level','signin','signinexp','signindate','contin_signin','catgirl_to','catgirl_from','cu','pd','ti','th']
-main_folder='D://QQ//Bot//nonebot//moribot//src//plugins//user//'
-RESOURCES_PATH = 'D://QQ//Bot//nonebot//moribot//resources//'
+columns=['registertime','exp','level','signin','signinexp','signindate','contin_signin','cu','pd','ti','th','catgirl_to','catgirl_from']
+
+from configs.path_config import USER_PATH,IMAGE_PATH,FONT_PATH,MAIN_PATH
 
 def register(QQ):
-    df_us=pd.read_csv(main_folder+'userdata.csv', index_col=0)
-    if QQ in df_us.index:
-        return 0
+    import os
+    user_path = os.path.join(USER_PATH, str(QQ))
+    if os.path.exists(user_path):
+        return 0 
     else:
         import time
-        df_us = df_us.append(pd.Series(data={'registertime':round(time.time())},name = QQ)).fillna(0)
-        
-        #save
-        import time
-        while True:
-            if time.time() - int(open(main_folder+'time', 'r').read()) <2:
-                time.sleep(0.2)
-                continue
-            df_us.to_csv(main_folder+'userdata.csv')
-            open(main_folder+'time', 'w').write(str(int(time.time())))
-            break
-        return df_us.shape[0]
+        os.mkdir(user_path)
+        df = pd.DataFrame(columns=columns).append(pd.Series(data={'registertime':round(time.time())},name = QQ)).fillna(0)
+        df.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
+        return len(os.listdir(USER_PATH))
 
 def backup():
-    import time
-    from shutil import copyfile
+    import time,os,shutil
     localtime = time.localtime(time.time())
-    copyfile(main_folder+'userdata.csv', main_folder+f'backup/{localtime.tm_mon}_{localtime.tm_mday}__{localtime.tm_hour}userdata.csv')
+    shutil.copytree(USER_PATH, os.path.join(MAIN_PATH, 'data','databackup',f'{localtime.tm_mon}_{localtime.tm_mday}'))
     return '文件已备份'
 
 from nonebot.adapters.cqhttp.bot import Bot
@@ -38,7 +30,7 @@ from nonebot.adapters.cqhttp.message import Message, MessageSegment
 def req_exp(level):
     return int(3*level*(level+1)/2)
 
-def get_level_color(level: int) -> tuple[int, int, int]:
+def get_level_color(level: int):
     '''
     生成图片
     '''
@@ -75,20 +67,28 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     import pandas as pd
     QQ = event.user_id
     
-    msg_box = ""
-    df_us=pd.read_csv(main_folder+'userdata.csv', index_col=0)
+    import os
+    if not os.path.exists(os.path.join(USER_PATH, str(QQ))):
+        return '茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
+    
+    df_us=pd.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
     df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
+    
     import datetime
     import random
     today = datetime.date.today().timetuple().tm_yday
     
-    if QQ not in df_us.index:
-        return '茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
-    
     sign_success = True
     if today==int(df_us.loc[QQ].signindate):  
         sign_success = False
-        bonus = 0
+        bonus = (df_us.loc[QQ].level+df_us.loc[QQ].signinexp)*0.01
+
+        if df_us.loc[QQ].signinexp==10:
+            bonus*=2
+        week = df_us.loc[QQ].contin_signin/7
+        if week == int(week):
+            bonus*=2
+            
         cu,pd,ti,th = 0,0,0,0
     else:
         ##签到
@@ -128,14 +128,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         df_us.loc[QQ,'th']+=th
         
         #避免冲突保存
-        import time
-        while True:
-            if time.time() - int(open(main_folder+'time', 'r').read()) <2:
-                time.sleep(0.2)
-                continue
-            df_us.to_csv(main_folder+'userdata.csv')
-            open(main_folder+'time', 'w').write(str(int(time.time())))
-            break
+        df_us.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
     
     #完成所有处理，开始画图
     from PIL import Image, ImageDraw, ImageFont
@@ -148,11 +141,10 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     width_edge = width//20
 
     # 加载头图
-    sign_pic_path = 'D:\\QQ\\Bot\\nonebot\\moribot\\resources\\img\\signin'
-    import os
-    if f'{QQ}.jpg' in os.listdir(sign_pic_path+'\\user_spec'):
-    #if False:
-        draw_top_img: Image.Image = Image.open(sign_pic_path+f'\\user_spec\\{QQ}.jpg')
+    sign_pic_path = os.path.join(IMAGE_PATH,'signin')
+
+    if os.path.exists(os.path.join(USER_PATH, str(QQ),'background.jpg')):
+        draw_top_img: Image.Image = Image.open(os.path.join(USER_PATH, str(QQ),'background.jpg'))
     else:
         filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(sign_pic_path+"\\"+ x)]
         random_index = random.randrange(1,len(filelist),1)
@@ -164,23 +156,23 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         draw_top_img = draw_top_img.crop((0,int((top_img_height-600)*1/2),width,top_img_height-int((top_img_height-600)*1/2)))
         top_img_height = 600
     #字体
-    bd_font_path = os.path.join(RESOURCES_PATH, 'fonts', 'SourceHanSans_Heavy.otf')
+    bd_font_path = os.path.join(FONT_PATH, 'SourceHanSans_Heavy.otf')
     bd_font = ImageFont.truetype(bd_font_path, width // 20)
     bd_text_font = ImageFont.truetype(bd_font_path, width // 20)    
     
-    main_font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'SourceHanSans_Regular.otf'))
+    main_font_path = os.path.abspath(os.path.join(FONT_PATH, 'SourceHanSans_Regular.otf'))
     text_font = ImageFont.truetype(main_font_path, width // 25)
 
-    level_font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'pixel.ttf'))
+    level_font_path = os.path.abspath(os.path.join(FONT_PATH, 'pixel.ttf'))
     level_font = ImageFont.truetype(level_font_path, width // 25)
 
-    monkey_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'HappyMonkey.ttf'))
+    monkey_path = os.path.abspath(os.path.join(FONT_PATH, 'HappyMonkey.ttf'))
     monkey_text_font = ImageFont.truetype(monkey_path, width // 20)
     
-    mdt_font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'tech.ttf'))
+    mdt_font_path = os.path.abspath(os.path.join(FONT_PATH, 'tech.ttf'))
     mdt_text_font = ImageFont.truetype(mdt_font_path, width // 25)
 
-    msjh_font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'msjh.ttf'))
+    msjh_font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
     msjh_text_font = ImageFont.truetype(msjh_font_path, width // 25)
 
     # 打招呼
@@ -231,7 +223,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     exp_bar = f'{int(df_us.loc[QQ].exp)}/{req_exp(level)}' 
     exp_bar_text_width, exp_bar_text_height = level_font.getsize(exp_bar)   
     #bonus
-    bonus_text = f'bonus + {int(bonus*100)}%'
+    bonus_text = f'bonus + {int(bonus*100)} %'
     bonus_text_width, bonus_text_height = mdt_text_font.getsize(exp_bar)   
     
     
@@ -293,19 +285,15 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         text=exp_bar, font=level_font, align='middle',anchor='mt',
                                         fill=(56, 56, 56))  # 经验
     
-    
     ##右边
-    if sign_success:
-        this_height = top_img_height +height*0.025
-        ImageDraw.Draw(background).text(xy=(width/4*3, this_height),
-                                            text=bonus_text, font=monkey_text_font, align='center',anchor='mt',
-                                            fill=(128, 128, 128))  # bonus
-        this_height += bonus_text_height+height*0.1
-    else:
-        this_height = top_img_height + height*0.15    
+    this_height = top_img_height +height*0.025
+    ImageDraw.Draw(background).text(xy=(width/4*3, this_height),
+                                        text=bonus_text, font=monkey_text_font, align='center',anchor='mt',
+                                        fill=(128, 128, 128))  # bonus
+    this_height += bonus_text_height+height*0.1
     ##铜铅钛钍
     #cu
-    background = add_trans_paste(background, path = RESOURCES_PATH+str('img//mdt//items//item-copper.png'),
+    background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-copper.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))
     ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{cu}', font=msjh_text_font, align='middle',anchor='mt',
@@ -315,7 +303,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(217, 157, 115))  # 材料
     #pd
     this_height += height/15
-    background = add_trans_paste(background, path = RESOURCES_PATH+str('img//mdt//items//item-lead.png'),
+    background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-lead.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))    
     ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{pd}', font=msjh_text_font, align='middle',anchor='mt',
@@ -325,7 +313,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(140, 127, 169))  # 材料
     ###ti
     this_height += height/15
-    background = add_trans_paste(background, path = RESOURCES_PATH+str('img//mdt//items//item-titanium.png'),
+    background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-titanium.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))   
     ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{ti}', font=msjh_text_font, align='middle',anchor='mt',
@@ -335,7 +323,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(141, 161, 227))  # 材料
     ###th
     this_height += height/15
-    background = add_trans_paste(background, path = RESOURCES_PATH+str('img//mdt//items//item-thorium.png'),
+    background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-thorium.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))   
     ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{th}', font=msjh_text_font, align='middle',anchor='mt',
@@ -344,9 +332,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         text=str(int(df_us.loc[QQ,'th'])), font=msjh_text_font, align='middle',anchor='mt',
                                         fill=(249, 163, 199))  # 材料
 
-
     ###末尾
-    ruanmeng_font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'ruanmeng.ttf'))
+    ruanmeng_font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
     ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, width // 25)
     ImageDraw.Draw(background).text(xy=(int(width_edge/2), int(height-width_edge/2)),
                                         text='@小狐狸茉莉', font=ruanmeng_text_font, align='middle',anchor='lb',

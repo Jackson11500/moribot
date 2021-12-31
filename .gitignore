@@ -15,6 +15,7 @@ bot.py
 *.npy
 resources
 time
+data
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

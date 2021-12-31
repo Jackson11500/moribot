@@ -76,3 +76,30 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()   
     
     
+    
+'''
+someonesay = on_startswith("nobeta：", priority=3,block=True)
+@someonesay.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await someonesay.finish()
+    says = str(event.message)[7:]
+    
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+    import os
+    someone_fig = Image.open(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\nobeta.jpg')
+    font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'ruanmeng.ttf'))
+    font = ImageFont.truetype(font_path, someone_fig.width // 10)
+    text_width, text_height = font.getsize(says)  
+    if text_width>=someone_fig.width/2:
+        await someonesay.finish('字数超出限制了的说~')
+        
+    txt=Image.new('L', (200,200))
+    d = ImageDraw.Draw(txt)
+    d.text(xy=(0,0),text=says, font=font, align='left',anchor='lt',fill=255)
+    w=txt.rotate(13,  expand=1)
+    someone_fig = someone_fig.paste( ImageOps.colorize(w, (0,0,0), (255,255,84)), (int(someone_fig.width/2),int(someone_fig.height/2)),  w)
+    someone_fig.save(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg', 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg'))
+    await someonesay.finish()   
+'''
