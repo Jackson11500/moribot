@@ -25,7 +25,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await someonesay.finish()
     if len(str(event.message))>10:
         await someonesay.finish()
-    await bot.send(event=event,message="茉莉的名人名言系列(需要加上中文冒号哦)~~目前支持\n鲁迅说：\n千代：\n宁宁：\nnobeta：\n追杀图：")
+    await bot.send(event=event,message="茉莉的名人名言系列(需要加上中文冒号哦)~~目前支持\n鲁迅说：\n年号：\n千代：\n宁宁：\nnobeta：\n追杀图：")
     await someonesay.finish()
     
 
@@ -69,6 +69,36 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     ImageDraw.Draw(someone_fig).text(xy=(int(someone_fig.width/10*9), int(someone_fig.height/10*9)),
                                     text='——鲁迅', font=text_font, align='center',anchor='rb',
                                     fill=(256, 256, 256))
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()    
+      
+###自定义图
+someonesay = on_startswith("年号：", priority=5,block=True)
+@someonesay.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if not isallow(event,2):
+        await someonesay.finish()
+    says = str(event.message)[3:]
+    if len(says)>2:
+        await someonesay.finish('字数超出限制了的说~')    
+    
+    from PIL import Image, ImageDraw, ImageFont
+    import os
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'年号.jpg'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, 'msyhbd.ttc'))
+    text_font = ImageFont.truetype(font_path, 50)
+    
+    if len(says) == 2:
+        says = says[0]+'\n'+says[1]
+        ImageDraw.Draw(someone_fig).multiline_text(xy = (int(160), int(70)),
+                                        text = says, align='left', 
+                                        font=text_font,fill=(0, 0, 0))     
+    else:
+        ImageDraw.Draw(someone_fig).multiline_text(xy = (int(160), int(100)),
+                                        text = says, align='left', 
+                                        font=text_font,fill=(0, 0, 0))     
+              
     someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
     await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()    
