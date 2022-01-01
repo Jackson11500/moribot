@@ -2,6 +2,8 @@ from pathlib import Path
 
 #主目录
 MAIN_PATH = str(Path(".").absolute())
+#插件目录
+PLUGINS_PATH = str(Path("./src/plugins").absolute())
 # 字体路径
 FONT_PATH = str(Path("resources/fonts").absolute())
 # 图片路径

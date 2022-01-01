@@ -12,9 +12,10 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
 from src.plugins.__toolbox import isallow
 
-from configs.path_config import FONT_PATH
+from configs.path_config import PLUGINS_PATH,FONT_PATH
 
-RESOURCES_PATH = 'D://QQ//Bot//nonebot//moribot//resources//'
+import os
+SOMEONE_RES_PATH = os.path.join(PLUGINS_PATH,'someone_say','resources')
 
 ###自定义图
 someonesay = on_startswith("有人说", priority=3,block=True)
@@ -29,30 +30,50 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
 
 ###自定义图
-luxunsay = on_startswith("鲁迅说：", priority=5,block=True)
-@luxunsay.handle()
+someonesay = on_startswith("鲁迅说：", priority=5,block=True)
+@someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
-        await luxunsay.finish()
+        await someonesay.finish()
     says = str(event.message)[4:]
     if len(says)>40:
-        await luxunsay.finish('太长了，鲁迅说不完...')
+        await someonesay.finish('太长了，鲁迅说不完...')
     
     from PIL import Image, ImageDraw, ImageFont
     import os
-    luxun_fig = Image.open(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\luxun.jpg')
-    msjh_font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
-    msjh_text_font = ImageFont.truetype(msjh_font_path, luxun_fig.width // 15)
-    for index in range(len(says)//10+1):
-        ImageDraw.Draw(luxun_fig).text(xy=(int(luxun_fig.width/2), int(luxun_fig.height*2/3)+index*30),
-                                        text=says[int(index*10):int(min(len(says),index*10+9)+1)], font=msjh_text_font, align='center',anchor='mm',
-                                        fill=(256, 256, 256))
-    ImageDraw.Draw(luxun_fig).text(xy=(int(luxun_fig.width/10*9), int(luxun_fig.height/10*9)),
-                                    text='——鲁迅', font=msjh_text_font, align='center',anchor='rb',
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'luxun.jpg'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
+    text_font = ImageFont.truetype(font_path, someone_fig.width // 15)
+    
+    width = int(someone_fig.width/2)
+    text_width = someone_fig.width/5*4
+    this_height = int(someone_fig.height*2/3)
+    #换行脚本
+    last_cut = 0
+    for cut in range(len(says)):
+        w, h = ImageDraw.Draw(someone_fig).textsize(says[last_cut:cut], font=text_font) 
+        if w<text_width:
+            continue
+        #开始绘图
+        ImageDraw.Draw(someone_fig).text(xy = (width, this_height),
+                                         text = says[last_cut:cut], align='left',anchor='mb', 
+                                         font=text_font,fill=(256, 256, 256))
+        this_height += h - 5
+        last_cut = cut 
+        if this_height >=int(someone_fig.height/10*9):
+            await someonesay.finish('太长了，鲁迅说不完...')
+            await someonesay.finish() 
+    ImageDraw.Draw(someone_fig).text(xy = (width, this_height),
+                                    text = says[last_cut:], align='left',anchor='mb', 
+                                    font=text_font,fill=(256, 256, 256))         
+    #结束换行
+    
+    ImageDraw.Draw(someone_fig).text(xy=(int(someone_fig.width/10*9), int(someone_fig.height/10*9)),
+                                    text='——鲁迅', font=text_font, align='center',anchor='rb',
                                     fill=(256, 256, 256))
-    luxun_fig.save(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_luxun.jpg', 'JPEG')
-    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_luxun.jpg'))
-    await luxunsay.finish()    
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()    
       
 ###自定义图
 someonesay = on_startswith("千代：", priority=5,block=True)
@@ -60,11 +81,11 @@ someonesay = on_startswith("千代：", priority=5,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
         await someonesay.finish()
-    says = str(event.message)[4:]
+    says = str(event.message)[3:]
     
     from PIL import Image, ImageDraw, ImageFont
     import os
-    someone_fig = Image.open(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\千代.jpg')
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'千代.jpg'))
     font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
     text_font = ImageFont.truetype(font_path, someone_fig.width // 10)
     text_width, text_height = text_font.getsize(says)  
@@ -73,9 +94,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     ImageDraw.Draw(someone_fig).text(xy=(int(someone_fig.width*0.5), int(someone_fig.height*0.6)),
                                     text=says, font=text_font, align='center',anchor='mm',
                                     fill=(255, 140, 0))
-    someone_fig.save(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg', 'JPEG')
-    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg'))
-    await someonesay.finish()   
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()
         
 someonesay = on_startswith("nobeta：", priority=5,block=True)
 @someonesay.handle()
@@ -86,8 +107,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     import os
-    someone_fig = Image.open(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\nobeta.jpg')
-    font_path = os.path.abspath(os.path.join(RESOURCES_PATH, 'fonts', 'ruanmeng.ttf'))
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'nobeta.jpg'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
     font = ImageFont.truetype(font_path, someone_fig.width // 10)
     text_width, text_height = font.getsize(says)  
     if text_width>=someone_fig.width/3*2:
@@ -98,8 +119,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     d.text(xy=(0,0),text=says, font=font, align='left',anchor='lt',fill=255)
     w=txt.rotate(13,  expand=1)
     someone_fig.paste( ImageOps.colorize(w, (0,0,0), (238, 130, 238)), (int(someone_fig.width*0.25),int(someone_fig.height*0.32)),  w)
-    someone_fig.save(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg', 'JPEG')
-    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg'))
+    
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()   
         
         
@@ -113,7 +135,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
     from PIL import Image, ImageDraw, ImageFont
     import os
-    someone_fig = Image.open(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\追杀.jpg')
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'追杀.jpg'))
     msjh_font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
     msjh_text_font = ImageFont.truetype(msjh_font_path, someone_fig.width // 15)
     text_width, text_height = msjh_text_font.getsize(says)  
@@ -122,6 +144,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     ImageDraw.Draw(someone_fig).text(xy=(int(someone_fig.width/4), int(someone_fig.height/15*14)),
                                     text=says, font=msjh_text_font, align='center',anchor='mm',
                                     fill=(0, 0, 0))
-    someone_fig.save(os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg', 'JPEG')
-    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.getcwd()+'\\src\\plugins\\someone_say\\resources\\ls_file\\ls_fig.jpg'))
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()   
