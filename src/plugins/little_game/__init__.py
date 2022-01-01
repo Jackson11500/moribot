@@ -35,7 +35,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await game.finish()
     import random
     at = MessageSegment.at(event.user_id)
-    text = f'使用了一个{str(event.message)[1:]},丢出了一个{random.randint(1,6)}'
+    text = f'使用了一个{str(event.message)[:]},丢出了一个{random.randint(1,6)}'
     await bot.send(event=event,message=at+text)
     await game.finish()
 
@@ -48,7 +48,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await game.finish()
     import random
     at = MessageSegment.at(event.user_id)
-    await bot.send(event=event,message=at+f'使用了一个自定义色子（1~{int(str(event.message)[4:])}）,丢出了一个{random.randint(1,int(str(event.message)[4:]))}')
+    await bot.send(event=event,message=at+f'使用了一个自定义{str(event.message)[:2]}（1~{int(str(event.message)[3:])}）,丢出了一个{random.randint(1,int(str(event.message)[3:]))}')
     await game.finish()
 
 ##24
