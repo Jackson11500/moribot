@@ -18,12 +18,10 @@ import os
 SOMEONE_RES_PATH = os.path.join(PLUGINS_PATH,'someone_say','resources')
 
 ###自定义图
-someonesay = on_startswith("有人说", priority=3,block=True)
+someonesay = on_startswith("有人说",rule = endswith("有人说"), priority=3,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
-        await someonesay.finish()
-    if len(str(event.message))>10:
         await someonesay.finish()
     await bot.send(event=event,message="茉莉的名人名言系列(需要加上中文冒号哦)~~目前支持\n鲁迅说：\n年号：\n千代：\n宁宁：\nnobeta：\n追杀图：")
     await someonesay.finish()
