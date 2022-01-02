@@ -47,6 +47,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not isallow(event,2):
         await game.finish()
     import random
+    if len(str(event.message))>20:
+        await game.finish(f"扔辣么大个{str(event.message)[:2]}干什么嘛")
     at = MessageSegment.at(event.user_id)
     await bot.send(event=event,message=at+f'使用了一个自定义{str(event.message)[:2]}（1~{int(str(event.message)[3:])}）,丢出了一个{random.randint(1,int(str(event.message)[3:]))}')
     await game.finish()

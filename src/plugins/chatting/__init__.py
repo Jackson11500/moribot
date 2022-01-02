@@ -99,7 +99,8 @@ chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    from src.plugins.user.utils import check_service
+    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
         
     from random import choice

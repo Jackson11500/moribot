@@ -53,3 +53,4 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
     await user_register.finish()
+    

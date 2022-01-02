@@ -18,7 +18,7 @@ def register(QQ):
 def backup():
     import time,os,shutil
     localtime = time.localtime(time.time())
-    shutil.copytree(USER_PATH, os.path.join(MAIN_PATH, 'data','databackup',f'{localtime.tm_mon}_{localtime.tm_mday}'))
+    shutil.copytree(USER_PATH, os.path.join(MAIN_PATH, 'data','databackup',f'{localtime.tm_mon}_{localtime.tm_mday}_{localtime.tm_hour}'))
     return '文件已备份'
 
 from nonebot.adapters.cqhttp.bot import Bot
@@ -127,7 +127,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         df_us.loc[QQ,'ti']+=ti
         df_us.loc[QQ,'th']+=th
         
-        #避免冲突保存
+        #保存
         df_us.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
     
     #完成所有处理，开始画图

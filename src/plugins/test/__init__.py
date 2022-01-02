@@ -49,12 +49,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message="测试开始")
     import sys
     #sys.path.append("D://QQ//Bot//General分支(1.0.1)(1)//General分支(1.0.1)(1)//兔子-db包//用户数据") 
-    import src.plugins.user.user_data as us
-    text = await us.user_sign_in(bot=bot, event=event, state=state)
-    try:
-        await bot.send(event=event,message=MessageSegment.image(file = "file:///"+text))
-    except:
-        await bot.send(event=event,message=text)
+    from src.plugins.user.utils import modify_res
+    text = modify_res(11451491919,0,10,10,-500,1)
+    await bot.send(event=event,message=str(text))
     await moritest.finish('测试完成')
     '''
     import src.plugins.user.command as command
