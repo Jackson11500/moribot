@@ -18,6 +18,8 @@ config = Config(**global_config.dict())
 from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import isallow
 
+from src.plugins.user.utils import check_service
+
 ##参数
 img_path = "file:///D://QQ//Bot//定向回复//"
 
@@ -29,7 +31,7 @@ pokeme = on_notice(_poke_me, priority=5,block=True)
 
 @pokeme.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
     from random import choice
     msg = choice(['唔...别摸了，毛都要给撸秃了','摸起来舒服吗',"不行那里不可以(´///ω/// `)",  "变态！！不许乱摸",
@@ -99,7 +101,6 @@ chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    from src.plugins.user.utils import check_service
     if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
         
@@ -116,7 +117,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 chat = on_regex("^吸狐狸$",priority=5,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
     await bot.send(event=event,message=MessageSegment.image(img_path+"吸狐狸.jpg"))
     await chat.finish()
@@ -183,7 +184,7 @@ moriat = on_message(rule = to_me(),priority=5,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
     
     #发情模式

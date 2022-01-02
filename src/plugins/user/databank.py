@@ -2,7 +2,7 @@
 service_list = {
     '图片':{'level':0,'cu':1,'pd':0,'ti':0,'th':0},
     '有人说':{'level':0,'cu':0,'pd':1,'ti':0,'th':0},
-    '贴贴':{'level':0,'cu':0,'pd':1,'ti':0,'th':0}
+    '贴贴':{'level':0,'cu':0,'pd':0,'ti':0,'th':0}
 }
 
 building = {
