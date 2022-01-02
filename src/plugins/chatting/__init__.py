@@ -16,9 +16,7 @@ global_config = get_driver().config
 config = Config(**global_config.dict())
 
 from nonebot.permission import SUPERUSER
-from src.plugins.__toolbox import isallow
-
-from src.plugins.user.utils import check_service
+from src.plugins.__toolbox import isallow,checkallow
 
 ##参数
 img_path = "file:///D://QQ//Bot//定向回复//"
@@ -31,12 +29,12 @@ pokeme = on_notice(_poke_me, priority=5,block=True)
 
 @pokeme.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
+    from src.plugins.user.utils import check_service
+    if checkallow(event,'chatting')==0 or check_service(event.user_id,'贴贴') !=99:
         await chat.finish()
+        
     from random import choice
-    msg = choice(['唔...别摸了，毛都要给撸秃了','摸起来舒服吗',"不行那里不可以(´///ω/// `)",  "变态！！不许乱摸",
-                  "好吧~_~，就一下下哦……唔~好了……都两下了……(害羞)", "真是好奇怪的要求的说～","温柔一点哦"
-                  ])
+    msg = choice(['唔...别摸了，毛都要给撸秃了','摸起来舒服吗',"不行那里不可以(´///ω/// `)","变态！！不许乱摸","好吧~_~，就一下下哦……唔~好了……都两下了……(害羞)", "真是好奇怪的要求的说～","温柔一点哦"])
     await bot.send(event=event,message=msg)
     await pokeme.finish()
 
@@ -45,7 +43,7 @@ chat = on_regex("^az$", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
     from random import choice
     msg = choice(['啊这','别az了，你只会az吗？',MessageSegment.at(event.user_id)+'你又在az了，休息一下好不好'])
@@ -56,7 +54,7 @@ chat = on_regex("^啊这$", priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
     from random import choice
     msg = choice(['az','别啊这了，你只会啊这吗？',MessageSegment.at(event.user_id)+'你又在啊这了，休息一下好不好'])
@@ -68,7 +66,7 @@ chat = on_regex("^？$|^问号$|^\?$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -86,7 +84,7 @@ chat = on_regex("^草$|^艹$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -101,7 +99,7 @@ chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -117,8 +115,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 chat = on_regex("^吸狐狸$",priority=5,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
+    if checkallow(event,'chatting')==0:
         await chat.finish()
+        
     await bot.send(event=event,message=MessageSegment.image(img_path+"吸狐狸.jpg"))
     await chat.finish()
 
@@ -126,8 +125,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 chat = on_regex("火星了",priority=5,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
+        
     await bot.send(event=event,message=MessageSegment.image(img_path+"火星了.jpg"))
     await chat.finish()
 
@@ -136,7 +136,7 @@ chat = on_regex("(^寄吧$)|(^几把$)",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -149,7 +149,7 @@ chat = on_regex("笨蛋",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -161,7 +161,7 @@ chat = on_regex("^救命啊$",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
         
     from random import choice
@@ -172,8 +172,9 @@ chat = on_regex("114514|1919810|哼哼啊啊啊",priority=5,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await chat.finish()
+        
     from random import choice
     msg = choice([MessageSegment.image(img_path+"哼哼喵.jpg"),MessageSegment.image(img_path+"哼哼啊.jpg")])
     await bot.send(event=event,message=MessageSegment.image(img_path+msg))
@@ -184,9 +185,9 @@ moriat = on_message(rule = to_me(),priority=5,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2) or check_service(event.user_id,'贴贴') !=99:
+    if checkallow(event,'chatting')==0:
         await chat.finish()
-    
+        
     #发情模式
     msg=str(event.message)
     if isallow(event,3):

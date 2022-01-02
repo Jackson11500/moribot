@@ -19,8 +19,6 @@ from configs.path_config import PLUGINS_PATH
 
 from nonebot.adapters.cqhttp import GROUP_ADMIN, GROUP_OWNER
 
-from configs.path_config import PLUGINS_PATH
-
 game = on_regex("^群组状态$", priority=5,block=True)
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):

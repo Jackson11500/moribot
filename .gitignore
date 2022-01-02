@@ -8,7 +8,7 @@
 .env.prod
 chatlist.npy
 chatlist2.npy
-group_status.npy
+*.csv
 __group_status.py
 group_status.npy
 bot.py
