@@ -38,7 +38,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+text)
     await user_signin.finish()
 
-###签到
+###注册
 user_register = on_command("注册",rule=endswith("注册"), priority=3,block=True)
 
 @user_register.handle()
@@ -54,3 +54,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await user_register.finish()
     
+###注册
+user_register = on_command("用户-锁定背景：", priority=5,block=True)
+
+@user_register.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_register.finish()
+    bot.get_image()
+    import src.plugins.user.user_data as us
+    par = us.register(event.user_id)
+    if par==0:
+        msg = MessageSegment.reply(event.message_id)+"茉莉这里已经有你的档案啦，不需要再注册一遍的！"
+    else:
+        msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
+    await bot.send(event=event,message=msg)
+    await user_register.finish()

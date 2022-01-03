@@ -135,7 +135,7 @@ img_path = "D://QQ//Bot//mdt-数据//"
 source_code = on_command("源码：",aliases={"source=","源码:","source ="},priority=5,block=True)
 @source_code.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not checkallow(event,1):
+    if checkallow(event,'technique')==0:
         await source_code.finish()
     source_file =  str(event.get_message()).lower()
     import os

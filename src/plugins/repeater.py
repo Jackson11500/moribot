@@ -68,7 +68,7 @@ class Fudu:
 _fudu_list = Fudu()
 
 
-fudu = on_message(permission=GROUP, priority=9)
+fudu = on_message(permission=GROUP, priority=50)
 
 
 @fudu.handle()
