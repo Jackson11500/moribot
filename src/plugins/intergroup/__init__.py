@@ -5,7 +5,7 @@ from nonebot import get_driver, permission
 
 
 from nonebot import on_regex,on_command,on_notice,on_message
-from nonebot.rule import to_me,startswith
+from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
@@ -19,10 +19,14 @@ from configs.path_config import PLUGINS_PATH
 
 from nonebot.adapters.cqhttp import GROUP_ADMIN, GROUP_OWNER
 
-game = on_regex("^群组状态$", priority=5,block=True)
+game = on_command("群组状态",priority=5,block=True)
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    await bot.send(event=event,message="这一部分茉莉会作为各个群组沟通的桥梁！")
+    if len(str(event.message))>0:
+        await game.finish()
+    import src.plugins.intergroup.group_handle as gh
+    text = await gh.draw_group_status(bot=bot, event=event, state=state)
+    await bot.send(event=event,message=MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+text))
     await game.finish()
 
 set_status = on_command("群组状态设置：",permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,priority=5,block=True)
@@ -43,7 +47,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
     if command[0] != 'group_name' and command[0] != 'intro':
         if command[1] != '0' and command[1] != '1':
-            await set_status.finish('您只能选择0(关闭)或1(开启)')
+            await set_status.finish('只能输入状态为0或1(分别表示关闭和开启)!')
         group_status.loc[str(event.group_id),command[0]] = int(command[1])
         group_status.to_csv(os.path.join(PLUGINS_PATH,'group_status.csv'))
         await set_status.finish('状态设置成功！')

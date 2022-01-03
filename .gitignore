@@ -16,6 +16,7 @@ bot.py
 resources
 time
 data
+ls_*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
