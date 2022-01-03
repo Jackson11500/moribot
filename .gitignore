@@ -10,7 +10,7 @@ chatlist.npy
 chatlist2.npy
 *.csv
 __group_status.py
-group_status.npy
+group_status*
 bot.py
 *.npy
 resources
