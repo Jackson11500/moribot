@@ -33,6 +33,11 @@ someonesay = on_startswith("鲁迅说：", priority=5,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
         await someonesay.finish()
+        
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish()
+        
     says = str(event.message)[4:]
     
     from PIL import Image, ImageDraw, ImageFont
@@ -80,6 +85,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     says = str(event.message)[3:]
     if len(says)>2:
         await someonesay.finish('字数超出限制了的说~')    
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish()
     
     from PIL import Image, ImageDraw, ImageFont
     import os
@@ -110,6 +118,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     says = str(event.message)[3:]
     if len(says)>=10:
         await someonesay.finish('字数超出限制了的说~')    
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish()
 
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     import os
@@ -137,6 +148,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     says = str(event.message)[3:]
     if len(says)>=10:
         await someonesay.finish('字数超出限制了的说~')    
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish()
     
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     import os
@@ -162,7 +176,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await someonesay.finish()
     says = str(event.message)[7:]
     if len(says)>=10:
-        await someonesay.finish('字数超出限制了的说~')        
+        await someonesay.finish('字数超出限制了的说~')      
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish()  
 
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     import os
@@ -187,6 +204,9 @@ someonesay = on_startswith("追杀图：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
+        await someonesay.finish()
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
         await someonesay.finish()
     says = str(event.message)[4:]
     

@@ -52,6 +52,10 @@ randomfig = on_startswith("随机", priority=3,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'random_pic')==0:
         await randomfig.finish()
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'图片')!=99:
+        await randomfig.finish()
+        
     pic_type = str(event.message)[2:]
     if len(pic_type)>7:
         await randomfig.finish()
