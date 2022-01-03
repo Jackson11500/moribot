@@ -30,8 +30,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 * 有人说\n\
 * 小游戏\n\
 * 群组服务\n\
-如果命令没反应，可能是茉莉正在打盹或暂时离开哦，请确认茉莉当前状态。\n\
-输入'茉莉状态'以设置模式！"
+如果命令没反应，可能是茉莉暂时离开或者未开启服务哦，请确认茉莉当前状态。\n\
+输入'群组服务'以查看模式，管理或群主可输入'群组状态设置'来进行调整！"
     await morisama.finish(text)
 
 ##
