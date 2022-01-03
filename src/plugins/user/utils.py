@@ -104,3 +104,4 @@ def send_err_msg(error):
         return "ohno，你的钛不够了呢"
     elif error == 4:
         return "ohno，你的钍不够了呢"
+    
