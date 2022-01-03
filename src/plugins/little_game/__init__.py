@@ -47,11 +47,28 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'little_game')==0:
         await game.finish()
     import random
-    if len(str(event.message))>20:
-        await game.finish(f"扔辣么大个{str(event.message)[:2]}干什么嘛")
     at = MessageSegment.at(event.user_id)
-    await bot.send(event=event,message=at+f'使用了一个自定义{str(event.message)[:2]}（1~{int(str(event.message)[3:])}）,丢出了一个{random.randint(1,int(str(event.message)[3:]))}')
-    await game.finish()
+    
+    saizi = str(event.message)[:2]
+    if len(str(event.message))>20:
+        await game.finish(at+f"扔辣么大个{saizi}干什么嘛")
+    
+    if str(event.message)[3]=='-' and str(event.message)[4:].isdigit():
+        number = int(str(event.message)[3:])
+        await game.finish(at+f"使用了一个自定义{saizi}（1~{number}）,丢出了一个{random.randint(number,0)}")
+    elif not str(event.message)[3:].isdigit():
+        
+        msg = random.choice[f'不要乱丢奇奇怪怪的{saizi}啦~beka',f"你对{saizi}做了些什么？老实交代！",f'{saizi}只能是整数组成的懂不懂啦！']
+        await game.finish(at+msg)
+    else:
+        number = int(str(event.message)[3:])
+        if number == 0:
+            await game.finish(at+f"使用了一个薛定谔{saizi},丢出了一个{random.randint(-99999999999999999999,99999999999999999999)}")
+        elif number == 1:
+            await game.finish(at+f"抛出了一个硬币,丢出了一个{random.randint(0,1)}")    
+        else:
+            await bot.send(event=event,message=at+f'使用了一个自定义{saizi}（1~{number}）,丢出了一个{random.randint(1,number)}')
+        await game.finish()
 
 ##24
 game = on_regex("^24点$", priority=5,block=True)
