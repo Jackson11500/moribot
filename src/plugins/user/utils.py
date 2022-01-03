@@ -41,6 +41,38 @@ def modify_res(QQ ,level = 0, cu = 0,pd = 0, ti = 0,th = 0):
     df_us.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
     return 99
 
+def modify_single_res(QQ ,level = 0, amount = 0 ,res_type = ''):
+    '''
+    检验并处理消耗资源\n
+    如果没有账户，返回 0\n
+    如果缺等级，返回 0\n
+    如果缺资源，返回 1\n
+    如果成功处理，返回 99
+    '''
+    import os
+    import pandas
+    
+    if not os.path.exists(os.path.join(USER_PATH, str(QQ))):
+        return 0
+    
+    df_us=pandas.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
+    df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
+    
+    if level > int(df_us.level):
+        return 0
+    if res_type == '':
+        return 99
+    #先检验全部资源都够
+    if amount < 0 and int(df_us[res_type]) + amount <0:
+        return 1
+    
+    #满足，开始处理数据
+    df_us[res_type] += amount
+
+    #保存
+    df_us.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
+    return 99
+
 def check_service(QQ ,service):
     '''
     检验并支付服务开销
