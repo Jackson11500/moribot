@@ -24,8 +24,8 @@ game = on_command("群组服务",priority=5,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if len(str(event.message))>0:
         await game.finish()
-    #msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]\n\群交互：[用于向其他群发送一个信息]'
-    msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]'
+    msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]\n传信：[用于向其他群发送一个信息]'
+    #msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]'
     await bot.send(event=event,message=msg)
     await game.finish()
 
@@ -75,6 +75,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await intergroup.finish()    
 
 intergroup = on_command("传信：",priority=8,block=True)
+
 @intergroup.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'intergroup')==0:
@@ -88,7 +89,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from src.plugins.__toolbox import checkallow_g,get_proporties
     if checkallow_g(int(group_id),'intergroup') == -1:
         await intergroup.finish('这个群不在茉莉的服务范围！\n（茉莉不在此群）')
-    elif checkallow_g(int(group_id),'intergroup') == 0:
+        return 0
+    if checkallow_g(int(group_id),'intergroup') == 0:
         await intergroup.finish('收件人拒收了邮件!可能是不希望有人打扰吧\n（目标群关闭了群间信息交互功能）')
     elif int(group_id) == int(event.group_id):
         await intergroup.finish('禁止原地tp')
