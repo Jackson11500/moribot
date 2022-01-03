@@ -29,6 +29,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 * 源码：mono\n\
 * 有人说\n\
 * 小游戏\n\
+* 群组服务\n\
 如果命令没反应，可能是茉莉正在打盹或暂时离开哦，请确认茉莉当前状态。\n\
 输入'茉莉状态'以设置模式！"
     await morisama.finish(text)

@@ -19,6 +19,16 @@ from configs.path_config import PLUGINS_PATH
 
 from nonebot.adapters.cqhttp import GROUP_ADMIN, GROUP_OWNER
 
+game = on_command("群组服务",priority=5,block=True)
+@game.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if len(str(event.message))>0:
+        await game.finish()
+    #msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]\n\群交互：[用于向其他群发送一个信息]'
+    msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]'
+    await bot.send(event=event,message=msg)
+    await game.finish()
+
 game = on_command("群组状态",priority=5,block=True)
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -37,13 +47,13 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import os
     group_status=pd.read_csv(os.path.join(PLUGINS_PATH,'group_status.csv'), index_col=0)
     if command[0] not in ['group_name','intro','chatting','intergroup','little_game','mdt','random_pic','someone_say','technique','user']:
-        await set_status.finish('茉莉无法识别此命令，请检测拼写或格式！')
+        await set_status.finish('茉莉无法识别此命令，请检测拼写或格式！\n群组状态设置：状态名：更改内容')
     
     if len(command[1])==0:
-            await set_status.finish('茉莉无法识别此命令，请检测拼写或格式！')
+            await set_status.finish('茉莉无法识别此命令，请检测拼写或格式！\n群组状态设置：状态名：更改内容')
             
     if len(command[1])==20:
-            await set_status.finish('字符太长啦~~~不可以输入这么多字的，是故意的还是格式不对呢？')              
+            await set_status.finish('字符太长啦~~~不可以输入这么多字的，是故意的还是格式不对呢？\n群组状态设置：状态名：更改内容')              
     
     if command[0] != 'group_name' and command[0] != 'intro':
         if command[1] != '0' and command[1] != '1':
