@@ -12,7 +12,7 @@ from nonebot.adapters import Bot, Event
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 
 from nonebot.permission import SUPERUSER
-from src.plugins.__toolbox import isallow
+from src.plugins.__toolbox import checkallow
 
 global_config = get_driver().config
 from configs.path_config import PLUGINS_PATH
@@ -65,4 +65,45 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     group_status.loc[str(event.group_id),command[0]] = command[1]
     group_status.to_csv(os.path.join(PLUGINS_PATH,'group_status.csv'))
     await set_status.finish('群组属性设置成功！')
+
+intergroup = on_command("传信",rule = endswith('传信'),priority=8,block=True)
+@intergroup.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'intergroup')==0:
+        await intergroup.finish()
+    await bot.send(event=event,message='传信--允许向其他群组发送信息\n只有开启群间交互功能的群才能使用和接受\n发送格式：\n传信：群id：内容\n暂仅支持纯文本，信纸价格2|4|0|0，所需等级：3')
+    await intergroup.finish()    
+
+intergroup = on_command("传信：",priority=8,block=True)
+@intergroup.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'intergroup')==0:
+        await intergroup.finish()
+
+    command = str(event.message).split('：')
+    group_id = command[0]
+    
+    if not group_id.isdigit:
+        await intergroup.finish('你们这是什么群啊，根本就不是正常的群号好嘛，检查好了再输入！')
+    from src.plugins.__toolbox import checkallow_g,get_proporties
+    if checkallow_g(int(group_id),'intergroup') == -1:
+        await intergroup.finish('这个群不在茉莉的服务范围！\n（茉莉不在此群）')
+    elif checkallow_g(int(group_id),'intergroup') == 0:
+        await intergroup.finish('收件人拒收了邮件!可能是不希望有人打扰吧\n（目标群关闭了群间信息交互功能）')
+    elif int(group_id) == int(event.group_id):
+        await intergroup.finish('禁止原地tp')
+    else:
+        if len(command[1])>200:
+            await intergroup.finish('不可以在其他群刷屏的！\n（信息过长）')
+        from src.plugins.user.utils import check_service
+        if check_service(int(event.user_id),'传信')==99:
+            group_name = get_proporties(int(event.group_id),'group_name')
+            msg = f'群间消息：你收到一条来自{group_name}的由@{event.user_id}发送的信息，TA说：\n'
+            msg += command[1]
+            msg += f'\n可以通过传信来回复消息！'
+            await bot.send_group_msg(group_id=int(group_id), message=msg)
+            await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"信件已送达对方！")
+            await intergroup.finish()
+        else:
+            await intergroup.finish('呜呜，发送失败了~可能是你等级不够或者没有铜铅买信纸！')
 
