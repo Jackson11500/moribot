@@ -20,12 +20,12 @@ from src.plugins.__toolbox import isallow,checkallow
 
 ##参数
 img_path = "file:///D://QQ//Bot//定向回复//"
-
+chat_priority = 10
 ##戳一戳
 async def _poke_me(bot: Bot, event: Event, state: dict):
     return event.notice_type == 'notify' and event.sub_type == 'poke' and str(event.target_id) == bot.self_id
 
-pokeme = on_notice(_poke_me, priority=5,block=True)
+pokeme = on_notice(_poke_me, priority=chat_priority,block=True)
 
 @pokeme.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -39,7 +39,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await pokeme.finish()
 
 ##az|啊这
-chat = on_regex("^az$", priority=5,block=True)
+chat = on_regex("^az$", priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -50,7 +50,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await chat.finish()
     
-chat = on_regex("^啊这$", priority=5,block=True)
+chat = on_regex("^啊这$", priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -62,7 +62,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##?
-chat = on_regex("^？$|^问号$|^\?$",priority=5,block=True)
+chat = on_regex("^？$|^问号$|^\?$",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -80,7 +80,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##草
-chat = on_regex("^草$|^艹$",priority=5,block=True)
+chat = on_regex("^草$|^艹$",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -95,7 +95,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
     
 ##贴贴
-chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=5,block=True)
+chat = on_regex("^茉莉贴贴$|^贴贴茉莉$",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -112,7 +112,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##贴贴
-chat = on_regex("^吸狐狸$",priority=5,block=True)
+chat = on_regex("^吸狐狸$",priority=chat_priority,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
@@ -122,7 +122,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##贴贴
-chat = on_regex("火星了",priority=5,block=True)
+chat = on_regex("火星了",priority=chat_priority,block=True)
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
@@ -132,7 +132,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##
-chat = on_regex("(^寄吧$)|(^几把$)",priority=5,block=True)
+chat = on_regex("(^寄吧$)|(^几把$)",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -145,7 +145,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##
-chat = on_regex("笨蛋",priority=5,block=True)
+chat = on_regex("笨蛋",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -157,7 +157,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 ##
-chat = on_regex("^救命啊$",priority=5,block=True)
+chat = on_regex("^救命啊$",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -168,7 +168,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=MessageSegment.image(img_path+"救命啊.jpg"))
     await chat.finish()
 
-chat = on_regex("114514|1919810|哼哼啊啊啊",priority=5,block=True)
+chat = on_regex("114514|1919810|哼哼啊啊啊",priority=chat_priority,block=True)
 
 @chat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -181,7 +181,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 #@茉莉
-moriat = on_message(rule = to_me(),priority=5,block=True)
+moriat = on_message(rule = to_me(),priority=chat_priority,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
