@@ -10,7 +10,7 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
-from src.plugins.__toolbox import isallow
+from src.plugins.__toolbox import checkallow
 
 from configs.path_config import PLUGINS_PATH,FONT_PATH
 
@@ -21,7 +21,7 @@ SOMEONE_RES_PATH = os.path.join(PLUGINS_PATH,'someone_say','resources')
 someonesay = on_startswith("有人说",rule = endswith("有人说"), priority=3,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     await bot.send(event=event,message="茉莉的名人名言系列(需要加上中文冒号哦)~~目前支持\n鲁迅说：\n年号：\n千代：\n宁宁：\nnobeta：\n追杀图：")
     await someonesay.finish()
@@ -31,7 +31,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("鲁迅说：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[4:]
     
@@ -75,7 +75,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("年号：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[3:]
     if len(says)>2:
@@ -105,7 +105,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("宁宁：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[3:]
     if len(says)>=10:
@@ -132,7 +132,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("千代：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[3:]
     if len(says)>=10:
@@ -158,7 +158,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("nobeta：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[7:]
     if len(says)>=10:
@@ -186,7 +186,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 someonesay = on_startswith("追杀图：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     says = str(event.message)[4:]
     

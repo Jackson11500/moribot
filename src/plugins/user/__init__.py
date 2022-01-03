@@ -11,7 +11,7 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
-from src.plugins.__toolbox import isallow
+from src.plugins.__toolbox import checkallow
 
 ###每日重启
 user_restart = on_command("数据备份",rule=endswith("数据备份"), priority=1, permission=SUPERUSER,block=True)
@@ -27,7 +27,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 user_signin = on_command("签到",rule=endswith("签到"), priority=3,block=True)
 @user_signin.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,1):
+    if checkallow(event,'user')==0:
         await user_signin.finish()
     import src.plugins.user.user_data as us
     text = await us.user_sign_in(bot=bot, event=event, state=state)
@@ -43,7 +43,7 @@ user_register = on_command("注册",rule=endswith("注册"), priority=3,block=Tr
 
 @user_register.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,1):
+    if checkallow(event,'user')==0:
         await user_register.finish()
     import src.plugins.user.user_data as us
     par = us.register(event.user_id)

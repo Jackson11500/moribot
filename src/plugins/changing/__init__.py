@@ -16,7 +16,7 @@ global_config = get_driver().config
 config = Config(**global_config.dict())
 
 from nonebot.permission import SUPERUSER
-from src.plugins.__toolbox import isallow
+from src.plugins.__toolbox import checkallow
 
 ##参数
 from random import choice
@@ -58,7 +58,7 @@ change_catgirl = on_command("变猫娘",priority=3,block=True)
 
 @change_catgirl.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'chatting')==0:
         await change_catgirl.finish()
     sb = At(event.json())
     if sb == ['all']:

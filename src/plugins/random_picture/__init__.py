@@ -10,7 +10,7 @@ from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
-from src.plugins.__toolbox import isallow
+from src.plugins.__toolbox import checkallow
 
 ###
 img_path = "file:///D://QQ//Bot//定向回复//随机包"
@@ -50,7 +50,7 @@ pic_dict = {
 randomfig = on_startswith("随机", priority=3,block=True)
 @randomfig.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'random_pic')==0:
         await randomfig.finish()
     pic_type = str(event.message)[2:]
     if len(pic_type)>7:
@@ -72,7 +72,7 @@ figintro = on_command("投稿图片指南", priority=3,block=True)
 
 @figintro.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if not isallow(event,2):
+    if checkallow(event,'random_pic')==0:
         await randomfig.finish()
     msg = '你也想投稿图片吗？非常欢迎哦~\n\
 · 如果你想添加3张及以下的图片，直接加茉莉好友然后私发给茉莉就行啦！\n\
