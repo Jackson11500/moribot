@@ -1,9 +1,4 @@
-# import nonebot
-
-
 from nonebot import get_driver
-
-from .config import Config
 
 from nonebot import on_command,on_regex
 from nonebot.rule import endswith, to_me,startswith
@@ -11,7 +6,6 @@ from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
 global_config = get_driver().config
-config = Config(**global_config.dict())
 
 from src.plugins.__toolbox import isallow
 
@@ -22,6 +16,7 @@ morisama = on_regex("(^茉莉酱$)|(^茉莉酱!$)|(^茉莉酱！$)", priority=2,
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     text = "主人找我有什么事呢？\n\
 我已经在努力学习了！可没有摸鱼呢\n\
+输入'茉莉的命令大全'查看支持的主要命令\n\
 输入以下命令以查询相关功能大类：\n\
 * 实用资料\n\
 * 随机图片\n\
@@ -34,6 +29,17 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 如果命令没反应，可能是茉莉暂时离开或者未开启服务哦，请确认茉莉当前状态。\n\
 输入'群组服务'以查看模式，管理或群主可输入'群组状态设置'来进行调整！"
     await morisama.finish(text)
+    
+from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+###
+morisama = on_command("茉莉的命令大全", priority=5,block=True)
+
+@morisama.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    import os
+    from configs.path_config import PLUGINS_PATH
+    await bot.send(event,message=MessageSegment.image(file = "file:///"+os.path.join(PLUGINS_PATH,'greeting','命令说明.png'))) 
+    await morisama.finish()
 
 ##
 morisama = on_command("茉莉状态",endswith('茉莉状态'), priority=2,block=True)

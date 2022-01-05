@@ -118,4 +118,3 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
             await intergroup.finish()
         else:
             await intergroup.finish('呜呜，发送失败了~可能是你等级不够或者没有铜铅买信纸！')
-

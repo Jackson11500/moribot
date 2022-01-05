@@ -78,7 +78,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'technique')==0:
         await res_color.finish()
     img_path = "file:///D://QQ//Bot//mdt-数据//计算向//"
-    await bot.send(event=event,message="Way_Zer调出来的！"+MessageSegment.image(file = img_path+"搞颜色.png"))
+    await bot.send(event=event,message="Way_Zer调出来的！\n更多颜色参考https://www.w3schools.com/colors"+MessageSegment.image(file = img_path+"搞颜色.png"))
     await res_color.finish()
     
 
