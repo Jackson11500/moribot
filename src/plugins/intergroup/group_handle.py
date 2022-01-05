@@ -48,15 +48,15 @@ async def draw_group_status(bot: Bot, event: GroupMessageEvent, state: T_State):
     
     ImageDraw.Draw(background).text(xy=(int(width_edge/2), int(height-width_edge/2)),
                                     text='@小狐狸茉莉', font=ruanmeng_s_text_font, align='middle',anchor='lb',
-                                    fill=(255, 105, 180))  # 材料   
+                                    fill=(255, 105, 180))  # 水印   
 
     ImageDraw.Draw(background).text(xy=(width-int(width_edge/2), int(height-width_edge/2-width//40-20)),
                                     text='共加入8个群，其中3个群隐藏。若要隐藏本群请@lc处理', font=ssmd_text_font, align='middle',anchor='rb',
-                                    fill=(150, 150, 150))  # 材料   
+                                    fill=(150, 150, 150))  #   
 
     ImageDraw.Draw(background).text(xy=(width-int(width_edge/2), int(height-width_edge/2)),
                                     text='管理权限--更改状态/说明请输入[群组状态设置：状态名：新状态]', font=ssmd_text_font, align='middle',anchor='rb',
-                                    fill=(0, 0, 0))  # 材料   
+                                    fill=(0, 0, 0))  #   
     
     ##表格
     hei_int = height//10    #两组间的间隔

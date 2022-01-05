@@ -14,6 +14,10 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 from src.plugins.__toolbox import checkallow
 from nonebot.adapters.cqhttp import PRIVATE_FRIEND
 
+from configs.path_config import PLUGINS_PATH
+import os
+THIS_PATH = os.path.join(PLUGINS_PATH,'user')
+
 ###每日重启
 user_restart = on_command("数据备份",rule=endswith("数据备份"), priority=1, permission=SUPERUSER,block=True)
 
@@ -22,7 +26,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import src.plugins.user.user_data as us
     msg = us.backup()
     await bot.send(event=event,message=msg)
-    await user_restart.finish("")
+    us.combine_user_data()
+    us.ranking_list()
+    await bot.send(event=event,message="排行榜已刷新")
+    await user_restart.finish()
     
 ###签到
 user_signin = on_command("签到",rule=endswith("签到"), priority=3,block=True)
@@ -56,6 +63,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_register.finish()
 
 ###注册
+user_register = on_command("排行榜",rule=endswith("排行榜"), priority=5,block=True)
+
+@user_register.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_register.finish()
+    import src.plugins.user.user_data as us
+    us.ranking_list()
+    msg = MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+os.path.join(THIS_PATH,'ls_image','ranking_list.jpg'))
+    await bot.send(event=event,message=msg)
+    await user_register.finish()
+
+###交易
 user_register = on_command("交易",rule=endswith("交易"), priority=3,block=True)
 
 @user_register.handle()
@@ -69,25 +89,27 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 3.传信  造价2cu4pd，需要3级\n\
 4.转账  3级后解锁初级转账（将资源投掷在对面基地），投掷过程会损失一半的资源\n\
 转账是目前唯一获取不同资源的手段，茉莉也在努力研发熔炉、质驱和发射台，玩家解锁后可以以更低的损耗实现资源转换|转账\n\
-私聊触发\n\
-1.用户-锁定背景  5级，30cu50pd5ti，锁定一个自定义图片作为签到背景\n\
+5.锁定背景  5级，30cu50pd5ti，锁定一个自定义图片作为签到背景\n\
 更完善的交易所正在建造中，敬请期待'
     await bot.send(event=event,message=msg)
     await user_register.finish()
 
 ###锁定背景
-user_lock_background = on_command("锁定背景",permission=PRIVATE_FRIEND, priority=5,block=True)
+user_lock_background = on_command("锁定背景", priority=5,block=True)
 
 @user_lock_background.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from src.plugins.user.utils import check_service
     if check_service(event.user_id,'锁定背景')==0:
-        await user_lock_background.finish("未绑定或等级不够！")
-    if check_service(event.user_id,'锁定背景')!=99:
-        await user_lock_background.finish("你的材料不够，请准备好材料后再来哦！")
-    await bot.send(event=event,message='请发送图片，背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）')
-    await bot.send_group_msg(group_id=180707407, message=f'{event.user_id}发起了锁定背景申请！')
-    await user_lock_background.finish()
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"未绑定或等级不够！")
+        await user_lock_background.finish()
+    elif check_service(event.user_id,'锁定背景')!=99:
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"你的材料不够，请准备好材料后再来哦！")
+        await user_lock_background.finish()
+    else:
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请私聊茉莉发送图片，背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
+        await bot.send_group_msg(group_id=180707407, message=f'{event.user_id}发起了锁定背景申请！')
+        await user_lock_background.finish()
     
 ###锁定背景
 user_transfer_base= on_command("转账",rule = endswith('转账'),priority=7,block=True)
@@ -119,7 +141,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     amount = command[2]
     from src.plugins.user.utils import modify_single_res
     
-    if not receiver.isdigit() or not amount.isdigit() or type not in ['cu','pd','ti','th'] or amount<=0:
+    if not receiver.isdigit() or not amount.isdigit() or type not in ['cu','pd','ti','th'] or int(amount)<=0:
         await bot.send(event,message='请根据正确的格式转账！示例：\n转账：12345678：cu：12\n分别填空：目标qq号，类型（cu/pd/ti/tu)，数量')
         await user_transfer_base.finish()
     
@@ -138,3 +160,4 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     else:
         await bot.send(event,message='用户数据读取失败！')
         await user_transfer_base.finish()
+        

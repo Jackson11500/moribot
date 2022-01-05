@@ -181,7 +181,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await chat.finish()
 
 #@茉莉
-moriat = on_message(rule = to_me(),priority=chat_priority,block=True)
+from nonebot.adapters.cqhttp import PRIVATE
+moriat = on_message(rule = to_me(),permission=PRIVATE,priority=80,block=True)
 
 @moriat.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):

@@ -1,7 +1,9 @@
 import pandas as pd
 columns=['registertime','exp','level','signin','signinexp','signindate','contin_signin','cu','pd','ti','th','catgirl_to','catgirl_from']
 
-from configs.path_config import USER_PATH,IMAGE_PATH,FONT_PATH,MAIN_PATH
+from configs.path_config import PLUGINS_PATH, USER_PATH,IMAGE_PATH,FONT_PATH,MAIN_PATH
+import os
+THIS_PATH = os.path.join(PLUGINS_PATH,'user')
 
 def register(QQ):
     import os
@@ -349,3 +351,169 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     background.save(saveloc, 'JPEG')
     
     return saveloc
+
+def combine_user_data():
+    import os
+    combine_ud = pd.read_csv(os.path.join(USER_PATH, '853330464','data.csv'), index_col=0)
+    combine_ud['registertime'] = combine_ud['registertime'].apply(str) + '\t'
+    for folder in os.listdir(USER_PATH):
+        if folder == '853330464':
+            continue
+        df_us=pd.read_csv(os.path.join(USER_PATH, folder,'data.csv'), index_col=0)
+        df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
+        combine_ud = combine_ud.append(df_us).fillna(0)
+        
+    combine_ud.to_csv(os.path.join(MAIN_PATH,'data','alluserdata.csv'))
+
+def ranking_list():
+    import os
+    df_us = pd.read_csv(os.path.join(MAIN_PATH,'data','alluserdata.csv'), index_col=0)
+    df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
+
+    from PIL import Image, ImageDraw, ImageFont
+    width = 2000
+    height = 2600
+    width_edge = width//30
+    
+    background = Image.new(
+    mode="RGBA",
+    size=(width, height),
+    color=(255, 255, 255))
+    
+    msjh_font_path = os.path.join(FONT_PATH, 'msjh.ttf')
+    msjh_font = ImageFont.truetype(msjh_font_path, 80)
+    msjh_l_font = ImageFont.truetype(msjh_font_path, 120)
+    msjh_ss_font = ImageFont.truetype(msjh_font_path, width//120)
+    
+    ruanmeng_font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
+    ruanmeng_s_text_font = ImageFont.truetype(ruanmeng_font_path, 120)
+    ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, 120)
+    
+    ssmd_font_path = os.path.abspath(os.path.join(FONT_PATH, 'shangshoumengdong.ttf'))
+    ssmd_text_font = ImageFont.truetype(ssmd_font_path, 120)
+    
+    
+    # 加载头图
+    sign_pic_path = os.path.join(IMAGE_PATH,'signin')
+
+    import random
+    filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(sign_pic_path+"\\"+ x)]
+    random_index = random.randrange(1,len(filelist),1)
+    draw_top_img: Image.Image = Image.open(sign_pic_path+"\\"+ filelist[random_index])
+    # 调整头图宽度
+    top_img_height = int(width * draw_top_img.height / draw_top_img.width)
+    draw_top_img = draw_top_img.resize((width, top_img_height))
+    if top_img_height>=1200:
+        draw_top_img = draw_top_img.crop((0,int((top_img_height-1200)*1/2),width,top_img_height-int((top_img_height-1200)*1/2)))
+        top_img_height = 1200
+    background.paste(draw_top_img,box=(0, 0))
+    
+    
+    
+    ##说明及水印
+    ImageDraw.Draw(background).text(xy=(width/2, width_edge+top_img_height),
+                                    text='>-- 茉莉的用户排行榜 --<', font=ruanmeng_text_font, align='left',anchor='mt',
+                                    fill=(100, 149, 237))  # 签到数据
+    
+    ImageDraw.Draw(background).text(xy=(int(width_edge/2), int(height-width_edge/2)),
+                                    text='@小狐狸茉莉', font=ruanmeng_text_font, align='middle',anchor='lb',
+                                    fill=(255, 105, 180))  # 水印   
+    ImageDraw.Draw(background).text(xy=(width - int(width_edge/2), int(height-width_edge/2)),
+                                    text=f'总人数：{int(df_us.shape[0])}', font=ssmd_text_font, align='middle',anchor='rb',
+                                    fill=(255, 0, 0))  # 总人数   
+    
+    this_height =250+top_img_height
+    interval = 30*4
+    
+    locx_type = int(width * 1/5)
+    locx_median = int(width * 2/5)
+    locx_ave = int(width * 3/5)
+    locx_max = int(width * 4/5)
+    
+    def draw_line(y,n_type,median,ave,max):
+        ImageDraw.Draw(background).text(xy=(locx_type,y),
+                                        text=n_type, font=msjh_font, align='m',anchor='mt',
+                                        fill=(255, 102, 51))  # 首行
+        ImageDraw.Draw(background).text(xy=(locx_median,y),
+                                        text=str(median), font=msjh_font, align='m',anchor='mt',
+                                        fill=(115, 0, 230))  # 中位数       
+        ImageDraw.Draw(background).text(xy=(locx_ave,y),
+                                        text=str(ave), font=msjh_font, align='m',anchor='mt',
+                                        fill=(51, 51, 255))  # 平均   
+        ImageDraw.Draw(background).text(xy=(locx_max,y),
+                                        text=str(max), font=msjh_font, align='m',anchor='mt',
+                                        fill=(255, 51, 51))  # 最高
+
+    def draw_line_num(y,n_type,median,ave,max):
+        ImageDraw.Draw(background).text(xy=(locx_type,y),
+                                        text=n_type, font=msjh_font, align='m',anchor='mt',
+                                        fill=(255, 102, 51))  # 首行
+        median=int(median)
+        ave=round(ave,1)
+        max=int(max)
+        ImageDraw.Draw(background).text(xy=(locx_median,y),
+                                        text=str(median), font=msjh_font, align='m',anchor='mt',
+                                        fill=(115, 0, 230))  # 中位数       
+        ImageDraw.Draw(background).text(xy=(locx_ave,y),
+                                        text=str(ave), font=msjh_font, align='m',anchor='mt',
+                                        fill=(51, 51, 255))  # 平均   
+        ImageDraw.Draw(background).text(xy=(locx_max,y),
+                                        text=str(max), font=msjh_font, align='m',anchor='mt',
+                                        fill=(255, 51, 51))  # 最高
+    
+    def draw_line_pic(background,y,item_name,median,ave,max):
+        
+        def add_trans_paste(background,path, size , box):
+            def trans_paste(bg_img,fg_img,box):
+                fg_img_trans = Image.new("RGBA",bg_img.size)
+                fg_img_trans.paste(fg_img,box,mask=fg_img)
+                new_img = Image.alpha_composite(bg_img,fg_img_trans)
+                return new_img
+            draw_level_img: Image.Image = Image.open(path)
+            draw_level_img = draw_level_img.resize((int(draw_level_img.width * size/draw_level_img.height), int(size)))
+            return trans_paste(background,draw_level_img,box=box)
+        
+        background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items',f'item-{item_name}.png'),
+                                size = 80,box = (locx_type-20, y))
+        
+        median=int(median)
+        ave=round(ave,1)
+        max=int(max)
+        ImageDraw.Draw(background).text(xy=(locx_median,y),
+                                        text=str(median), font=msjh_font, align='m',anchor='mt',
+                                        fill=(115, 0, 230))  # 中位数       
+        ImageDraw.Draw(background).text(xy=(locx_ave,y),
+                                        text=str(ave), font=msjh_font, align='m',anchor='mt',
+                                        fill=(51, 51, 255))  # 平均   
+        ImageDraw.Draw(background).text(xy=(locx_max,y),
+                                        text=str(max), font=msjh_font, align='m',anchor='mt',
+                                        fill=(255, 51, 51))  # 最高
+        return background
+
+
+    draw_line(this_height,'属性|材料','中位数','平均数','第一名')
+    
+    this_height = this_height+interval
+    draw_line_num(this_height,'经验值',df_us['exp'].median(),df_us['exp'].mean(),df_us['exp'].max())
+    
+    this_height = this_height+interval
+    draw_line_num(this_height,'连续签到',df_us['contin_signin'].median(),df_us['contin_signin'].mean(),df_us['contin_signin'].max())
+    
+    this_height = this_height+interval
+    draw_line_num(this_height,'-等级-',df_us['level'].median(),df_us['level'].mean(),df_us['level'].max())
+    
+    this_height = this_height+interval+30
+    background=draw_line_pic(background,this_height,'copper',df_us['cu'].median(),df_us['cu'].mean(),df_us['cu'].max())
+
+    this_height = this_height+interval
+    background=draw_line_pic(background,this_height,'lead',df_us['pd'].median(),df_us['pd'].mean(),df_us['pd'].max())
+    
+    this_height = this_height+interval
+    background=draw_line_pic(background,this_height,'titanium',df_us['ti'].median(),df_us['ti'].mean(),df_us['ti'].max())
+    
+    this_height = this_height+interval
+    background=draw_line_pic(background,this_height,'thorium',df_us['th'].median(),df_us['th'].mean(),df_us['th'].max())
+    
+    background = background.convert("RGB")
+    saveloc = os.path.join(THIS_PATH,'ls_image','ranking_list.jpg')
+    background.save(saveloc, 'JPEG')
