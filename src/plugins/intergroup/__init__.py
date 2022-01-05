@@ -25,7 +25,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if len(str(event.message))>0:
         await game.finish()
     msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]\n传信：[用于向其他群发送一个信息]'
-    #msg='群组服务命令列表：\n群组状态[用于查看群组开放的功能]\n群组状态设置：[用于调整群组开放的功能，仅管理]'
     await bot.send(event=event,message=msg)
     await game.finish()
 
@@ -39,7 +38,18 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+text))
     await game.finish()
 
-set_status = on_command("群组状态设置：",permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,priority=5,block=True)
+game = on_command("群组状态设置",rule=endswith("群组状态设置"),permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,priority=6,block=True)
+@game.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if len(str(event.message))>0:
+        await game.finish()
+    msg='群主|群管限定指令、用于调整群组服务状态\n格式：\n群组状态设置：[状态名]：[设置项]\n\
+举例：\n群组状态设置：intro：一个好玩的群\n群组状态设置：random_pic：0\n\
+状态名可以通过[群组状态]指令查询\n其中intro与group_name可以输入20字以下字符，其他的输入0或1（分别表示关闭、开启）'
+    await bot.send(event=event,message=msg)
+    await game.finish()
+
+set_status = on_command("群组状态设置：",permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,priority=7,block=True)
 @set_status.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     command = str(event.message).split('：')

@@ -54,7 +54,27 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
     await user_register.finish()
-    
+
+###注册
+user_register = on_command("交易",rule=endswith("交易"), priority=3,block=True)
+
+@user_register.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_register.finish()
+    msg='欢迎来到茉莉的临时交易所，现在提供的服务如下：\n\
+输入指令即可查询功能使用方式\n\
+1.随机图片    造价1cu\n\
+2.有人说    造价1pd\n\
+3.传信  造价2cu4pd，需要3级\n\
+4.转账  3级后解锁初级转账（将资源投掷在对面基地），投掷过程会损失一半的资源\n\
+转账是目前唯一获取不同资源的手段，茉莉也在努力研发熔炉、质驱和发射台，玩家解锁后可以以更低的损耗实现资源转换|转账\n\
+私聊触发\n\
+1.用户-锁定背景  5级，30cu50pd5ti，锁定一个自定义图片作为签到背景\n\
+更完善的交易所正在建造中，敬请期待'
+    await bot.send(event=event,message=msg)
+    await user_register.finish()
+
 ###锁定背景
 user_lock_background = on_command("用户-锁定背景",permission=PRIVATE_FRIEND, priority=5,block=True)
 
@@ -70,7 +90,25 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_lock_background.finish()
     
 ###锁定背景
-user_transfer_base= on_command("转账：", priority=5,block=True)
+user_transfer_base= on_command("转账",rule = endswith('转账'),priority=7,block=True)
+
+@user_transfer_base.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_register.finish()
+    msg='在玩家达到3级后，可以将资源投掷到别人基地\n\
+这是最原始的转账方式，过程中会损失大量的资源(约50%)\n\
+转账格式：\n\
+转账：[对方QQ]：[项目]：[数量]\n\
+实例：\n\
+转账：12345678：cu：100\n\
+目前项目包括：cu、pd、ti、th(铜铅钛钍)\n\
+据说中后期的玩家们常常会用质驱、发射台甚至载荷驱动塔进行大规模高效率交易，想必资源损耗会少很多吧\n\
+转账记录会被存档并定期检查，如果发现用小号收集资源会给予惩罚哦~'
+    await bot.send(event=event,message=msg)
+    await user_register.finish()
+
+user_transfer_base= on_command("转账：", priority=8,block=True)
 
 @user_transfer_base.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -81,8 +119,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     amount = command[2]
     from src.plugins.user.utils import modify_single_res
     
-    if not receiver.isdigit() or not amount.isdigit() or type not in ['cu','pd','ti','th']:
-        await bot.send(event,message='请根据正确的格式转账！示例：\n用户-转账：12345678：cu：12\n分别填空：目标qq号，类型（cu/pd/ti/tu)，数量')
+    if not receiver.isdigit() or not amount.isdigit() or type not in ['cu','pd','ti','th'] or amount<=0:
+        await bot.send(event,message='请根据正确的格式转账！示例：\n转账：12345678：cu：12\n分别填空：目标qq号，类型（cu/pd/ti/tu)，数量')
         await user_transfer_base.finish()
     
     if modify_single_res(int(payer))==99 and modify_single_res(int(receiver))==99:
