@@ -79,7 +79,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     import random
     today = datetime.date.today().timetuple().tm_yday
     
-    sign_success = True
+    sign_success = True #是否签到成功
     cu,pd,ti,th = 0,0,0,0
     exp = 0
     bonus = 0
@@ -161,9 +161,11 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
 
     # 加载头图
     sign_pic_path = os.path.join(IMAGE_PATH,'signin')
-
+    background_lock=0   #锁定背景？，1为锁定
+    
     if os.path.exists(os.path.join(USER_PATH, str(QQ),'background.jpg')):
         draw_top_img: Image.Image = Image.open(os.path.join(USER_PATH, str(QQ),'background.jpg'))
+        background_lock=1
     else:
         filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(sign_pic_path+"\\"+ x)]
         random_index = random.randrange(1,len(filelist),1)
@@ -193,6 +195,10 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
 
     msjh_font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
     msjh_text_font = ImageFont.truetype(msjh_font_path, width // 25)
+    
+    ruanmeng_font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
+    ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, width // 25)
+    ruanmeng_ss_text_font = ImageFont.truetype(ruanmeng_font_path, width // 40)
 
     # 打招呼
     nowtime = datetime.datetime.now()   #现在的时间
@@ -305,16 +311,22 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(56, 56, 56))  # 经验
     
     ##右边
-    this_height = top_img_height +height*0.025
+    if background_lock == 1:
+        this_height = top_img_height +height*0.02
+        ImageDraw.Draw(background).text(xy=(int(width-width_edge/2), int(this_height)),
+                                            text='[已锁定背景]', font=ruanmeng_ss_text_font, align='middle',anchor='rt',
+                                            fill=(153, 51, 255))  # 材料
+    this_height = top_img_height +height*0.05
     ImageDraw.Draw(background).text(xy=(width/4*3, this_height),
                                         text=bonus_text, font=monkey_text_font, align='center',anchor='mt',
                                         fill=(128, 128, 128))  # bonus
-    this_height += bonus_text_height+height*0.1
+    this_height += bonus_text_height+height*0.075
     ##铜铅钛钍
     #cu
     background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-copper.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))
-    ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
+    if sign_success:
+        ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{cu}', font=msjh_text_font, align='middle',anchor='mt',
                                         fill=(217, 157, 115))  # 材料
     ImageDraw.Draw(background).text(xy=(int(width-2*width_edge), int(this_height)),
@@ -324,7 +336,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     this_height += height/15
     background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-lead.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))    
-    ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
+    if sign_success:
+        ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{pd}', font=msjh_text_font, align='middle',anchor='mt',
                                         fill=(140, 127, 169))  # 材料
     ImageDraw.Draw(background).text(xy=(int(width-2*width_edge), int(this_height)),
@@ -334,7 +347,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     this_height += height/15
     background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-titanium.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))   
-    ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
+    if sign_success:
+        ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
                                         text=f'+{ti}', font=msjh_text_font, align='middle',anchor='mt',
                                         fill=(141, 161, 227))  # 材料
     ImageDraw.Draw(background).text(xy=(int(width-2*width_edge), int(this_height)),
@@ -344,16 +358,15 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     this_height += height/15
     background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-thorium.png'),
                             size = width // 22,box = (int(width/2)+width_edge, int(this_height)))   
-    ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
-                                        text=f'+{th}', font=msjh_text_font, align='middle',anchor='mt',
-                                        fill=(249, 163, 199))  # 材料
+    if sign_success:
+        ImageDraw.Draw(background).text(xy=(int(width/4*3), int(this_height)),
+                                            text=f'+{th}', font=msjh_text_font, align='middle',anchor='mt',
+                                            fill=(249, 163, 199))  # 材料
     ImageDraw.Draw(background).text(xy=(int(width-2*width_edge), int(this_height)),
                                         text=str(int(df_us.loc[QQ,'th'])), font=msjh_text_font, align='middle',anchor='mt',
                                         fill=(249, 163, 199))  # 材料
 
     ###末尾
-    ruanmeng_font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
-    ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, width // 25)
     ImageDraw.Draw(background).text(xy=(int(width_edge/2), int(height-width_edge/2)),
                                         text='@小狐狸茉莉', font=ruanmeng_text_font, align='middle',anchor='lb',
                                         fill=(255, 105, 180))  # 材料    

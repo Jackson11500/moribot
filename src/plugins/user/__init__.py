@@ -100,10 +100,11 @@ user_lock_background = on_command("锁定背景", priority=5,block=True)
 @user_lock_background.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from src.plugins.user.utils import check_service
-    if check_service(event.user_id,'锁定背景')==0:
+    result = check_service(event.user_id,'锁定背景')
+    if result==0:
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"未绑定或等级不够！")
         await user_lock_background.finish()
-    elif check_service(event.user_id,'锁定背景')!=99:
+    elif result!=99:
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"你的材料不够，请准备好材料后再来哦！")
         await user_lock_background.finish()
     else:
