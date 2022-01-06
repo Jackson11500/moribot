@@ -66,14 +66,13 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     '''
     处理签到并发送签到图片
     '''
-    import pandas as pd
     QQ = event.user_id
-    
+    import pandas
     import os
     if not os.path.exists(os.path.join(USER_PATH, str(QQ))):
         return '茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
     
-    df_us=pd.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
+    df_us=pandas.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
     df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
     
     import datetime
@@ -81,17 +80,35 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     today = datetime.date.today().timetuple().tm_yday
     
     sign_success = True
+    cu,pd,ti,th = 0,0,0,0
+    exp = 0
+    bonus = 0
+    
+    #计算成就加成
+    ACH_PATH = os.path.join(USER_PATH, str(QQ),'achievement.csv')
+    if os.path.exists(ACH_PATH):
+        df_ach=pandas.read_csv(ACH_PATH, index_col=0)
+        for index, row in df_ach.iterrows():
+            exp += int(row['daily_exp'])
+            cu += int(row['daily_cu'])
+            pd += int(row['daily_pd'])
+            ti += int(row['daily_ti'])
+            th += int(row['daily_th'])
+            bonus += int(row['bonus'])*0.01
+        del df_ach
+    
     if today==int(df_us.loc[QQ].signindate):  
+        exp +=int(df_us.loc[QQ,'signinexp'])
+        
         sign_success = False
-        bonus = (df_us.loc[QQ].level+df_us.loc[QQ].signinexp)*0.01
+        bonus += (df_us.loc[QQ].level+df_us.loc[QQ].signinexp)*0.01
 
         if df_us.loc[QQ].signinexp==10:
             bonus*=2
         week = df_us.loc[QQ].contin_signin/7
         if week == int(week):
             bonus*=2
-            
-        cu,pd,ti,th = 0,0,0,0
+        
     else:
         ##签到
         #是否连续签到
@@ -103,26 +120,26 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         df_us.loc[QQ,'signindate'] = today
         #7日签到
         week = df_us.loc[QQ,'contin_signin']/7
-        th = 0
         if week == int(week):
-            th = week
+            th = int(week)
             df_us.loc[QQ,'exp']+=3*week
-        #计算随机经验
-        exp=random.randrange(1,11,1)    
+            
+        #计算随机经验的加成
+        exp+=random.randrange(1,11,1)    
         df_us.loc[QQ,'signinexp'] = exp
         df_us.loc[QQ,'exp']+=exp
         while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
             df_us.loc[QQ,'level']+=1
-        bonus = (df_us.loc[QQ].level+exp)*0.01
+        bonus += (df_us.loc[QQ].level+exp)*0.01
 
         if exp==10:
             bonus*=2
         if week == int(week):
             bonus*=2
         
-        cu = int(random.random()*20*(1+bonus))
-        pd = int(random.random()*15*(1+bonus))
-        ti = int(random.random()*3*(1+bonus))
+        cu += int(random.random()*20*(1+bonus))
+        pd += int(random.random()*15*(1+bonus))
+        ti += int(random.random()*3*(1+bonus))
         th += int(random.random()*0.6*(1+bonus))
         df_us.loc[QQ,'cu']+=cu
         df_us.loc[QQ,'pd']+=pd
@@ -207,13 +224,13 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             sign_in_text+='好运连连，经验+'+str(exp)
         else:
             sign_in_text+='天选之人！经验+'+str(exp) 
-        if week == int(week):
-            sign_in_text+='(连续签到奖励-额外+'+str(3*week)+')'
+        #if week == int(week):
+        #    sign_in_text+='(连续签到奖励-额外+'+str(3*week)+')'
         
         sign_in_text+='\n已连续签到'+str(int(df_us.loc[QQ].contin_signin))+'天'
         sign_in_text_width, sign_in_text_height = bd_text_font.getsize(sign_in_text)    
     else:
-        sign_in_text+='今日已签到，经验+'+str(int(df_us.loc[QQ,'signinexp']))
+        sign_in_text+='今日已签到，经验+'+str(exp)
         sign_in_text+='\n已连续签到'+str(int(df_us.loc[QQ].contin_signin))+'天'
         sign_in_text_width, sign_in_text_height = bd_text_font.getsize(sign_in_text)   
     

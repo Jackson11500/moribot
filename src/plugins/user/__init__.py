@@ -161,3 +161,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.send(event,message='用户数据读取失败！')
         await user_transfer_base.finish()
         
+###成就:图片收藏家
+user_register = on_command("添加成就-图片收藏家：",permission=SUPERUSER, priority=5,block=True)
+
+@user_register.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    command = str(event.message).split('：')
+    id = command[0]
+    count = command[1]
+    
+    import src.plugins.user.achievement as ach
+    ach.add_achievement(int(id),ach_name = '图片收藏家',level = int(count),one_cu = int(count)//10,one_pd = int(count)//10,bonus = int(count)//100)
+    msg = f'已成功为{id}添加永久成就：图片收藏家({int(count)})'
+    msg += f'\n获得奖励：铜+{int(count)//10},铅+{int(count)//10}'
+    msg += f'\nbonus+{int(count)//100}'
+    await bot.send(event=event,message=msg)
+    await user_register.finish()
