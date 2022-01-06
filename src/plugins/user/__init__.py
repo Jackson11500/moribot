@@ -70,7 +70,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'user')==0:
         await user_register.finish()
     import src.plugins.user.user_data as us
-    us.ranking_list()
+    #us.ranking_list()
     msg = MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+os.path.join(THIS_PATH,'ls_image','ranking_list.jpg'))
     await bot.send(event=event,message=msg)
     await user_register.finish()
