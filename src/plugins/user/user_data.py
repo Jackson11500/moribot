@@ -54,17 +54,17 @@ def return_level_icon_path(level:int):
     返回等级图标所在的文件夹，但这一文件不一定存在
     '''
     unittype = ['','alpha','beta','gamma',
-                'dagger','nova','crawler','flare','mono','risso','retusa',
-                'mace','pulsar','atrax','horizon','poly','minke','oxynoe',
-                'fortress','quasar','spiroct','zenith','mega','bryde','cyerce',
-                'scepter','vela','arkyid','antumbra','quad','sei','aegires',
-                'reign','corvus','toxopid','eclipse','oct','omura','navanax',
+                'dagger','crawler','nova','flare','mono','risso','retusa',
+                'mace','atrax','pulsar','horizon','poly','minke','oxynoe',
+                'fortress','spiroct','quasar','zenith','mega','bryde','cyerce',
+                'scepter','arkyid','vela','antumbra','quad','sei','aegires',
+                'reign','toxopid','corvus','eclipse','oct','omura','navanax',
                 ]
     return 'D://QQ//Bot//nonebot//moribot//resources//img//mdt//unit//unit-'+unittype[int(level)]+'-full.png'
 
 async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Union[Message, MessageSegment, str]:
     '''
-    处理签到并发送签到图片
+    处理签到并发送签到图片3
     '''
     QQ = event.user_id
     import pandas
@@ -84,6 +84,15 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     exp = 0
     bonus = 0
     
+    #计算周六日加成
+    week = datetime.datetime.now().weekday()
+    if week == 4:
+        bonus += 5 * 0.01
+    elif week > 4:
+        bonus += 10 * 0.01   
+    else:
+        bonus += int(random.random()*5) * 0.01
+    
     #计算成就加成
     ACH_PATH = os.path.join(USER_PATH, str(QQ),'achievement.csv')
     if os.path.exists(ACH_PATH):
@@ -96,12 +105,12 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             th += int(row['daily_th'])
             bonus += int(row['bonus'])*0.01
         del df_ach
-    
+    #主加成程序
     if today==int(df_us.loc[QQ].signindate):  
         exp +=int(df_us.loc[QQ,'signinexp'])
         
         sign_success = False
-        bonus += (df_us.loc[QQ].level+df_us.loc[QQ].signinexp)*0.01
+        bonus += (df_us.loc[QQ].level+df_us.loc[QQ].signinexp) * 0.01
 
         if df_us.loc[QQ].signinexp==10:
             bonus*=2

@@ -95,7 +95,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_register.finish()
 
 ###锁定背景
-user_lock_background = on_command("锁定背景", priority=5,block=True)
+user_lock_background = on_command("锁定背景",rule = endswith("锁定背景"), priority=5,block=True)
 
 @user_lock_background.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
