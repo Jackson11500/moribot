@@ -63,14 +63,25 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await user_register.finish()
 
 ###注册
-user_register = on_command("排行榜",rule=endswith("排行榜"), priority=5,block=True)
+user_register = on_command("排行榜刷新",rule=endswith("排行榜刷新"), priority=5,block=True)
 
 @user_register.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'user')==0:
         await user_register.finish()
     import src.plugins.user.user_data as us
-    #us.ranking_list()
+    us.combine_user_data()
+    us.ranking_list()
+    await bot.send(event=event,message="排行榜已刷新")
+    await user_register.finish()
+
+###注册
+user_register = on_command("排行榜",rule=endswith("排行榜"), priority=5,block=True)
+
+@user_register.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_register.finish()
     msg = MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+os.path.join(THIS_PATH,'ls_image','ranking_list.jpg'))
     await bot.send(event=event,message=msg)
     await user_register.finish()

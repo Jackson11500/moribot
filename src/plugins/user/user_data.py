@@ -171,14 +171,19 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     # 加载头图
     sign_pic_path = os.path.join(IMAGE_PATH,'signin')
     background_lock=0   #锁定背景？，1为锁定
-    
-    if os.path.exists(os.path.join(USER_PATH, str(QQ),'background.jpg')):
+    if os.path.exists(os.path.join(USER_PATH, str(QQ),'background')):
+        filelist = [x for x in os.listdir(os.path.join(USER_PATH, str(QQ),'background')) if os.path.isfile(os.path.join(USER_PATH, str(QQ),'background',x))]
+        random_index = random.randrange(1,len(filelist),1)
+        draw_top_img: Image.Image = Image.open(os.path.join(USER_PATH, str(QQ),'background',filelist[random_index]))
+        background_lock=2
+    elif os.path.exists(os.path.join(USER_PATH, str(QQ),'background.jpg')):
         draw_top_img: Image.Image = Image.open(os.path.join(USER_PATH, str(QQ),'background.jpg'))
         background_lock=1
     else:
-        filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(sign_pic_path+"\\"+ x)]
+        filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(os.path.join(sign_pic_path,x))]
         random_index = random.randrange(1,len(filelist),1)
-        draw_top_img: Image.Image = Image.open(sign_pic_path+"\\"+ filelist[random_index])
+        draw_top_img: Image.Image = Image.open(os.path.join(sign_pic_path,filelist[random_index]))
+        
     # 调整头图宽度
     top_img_height = int(width * draw_top_img.height / draw_top_img.width)
     draw_top_img = draw_top_img.resize((width, top_img_height))
@@ -324,6 +329,11 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         this_height = top_img_height +height*0.02
         ImageDraw.Draw(background).text(xy=(int(width-width_edge/2), int(this_height)),
                                             text='[已锁定背景]', font=ruanmeng_ss_text_font, align='middle',anchor='rt',
+                                            fill=(153, 51, 255))  # 材料
+    elif background_lock == 2:
+        this_height = top_img_height +height*0.02
+        ImageDraw.Draw(background).text(xy=(int(width-width_edge/2), int(this_height)),
+                                            text='[已锁定背景池]', font=ruanmeng_ss_text_font, align='middle',anchor='rt',
                                             fill=(153, 51, 255))  # 材料
     this_height = top_img_height +height*0.05
     ImageDraw.Draw(background).text(xy=(width/4*3, this_height),

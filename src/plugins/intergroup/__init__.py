@@ -98,9 +98,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await intergroup.finish('你们这是什么群啊，根本就不是正常的群号好嘛，检查好了再输入！')
     from src.plugins.__toolbox import checkallow_g,get_proporties
     if checkallow_g(int(group_id),'intergroup') == -1:
-        await intergroup.finish('这个群不在茉莉的服务范围！\n（茉莉不在此群）')
+        await bot.send(event=event,message='这个群不在茉莉的服务范围！\n（茉莉不在此群）')
+        await intergroup.finish()
         return 0
-    if checkallow_g(int(group_id),'intergroup') == 0:
+    elif checkallow_g(int(group_id),'intergroup') == 0:
         await intergroup.finish('收件人拒收了邮件!可能是不希望有人打扰吧\n（目标群关闭了群间信息交互功能）')
     elif int(group_id) == int(event.group_id):
         await intergroup.finish('禁止原地tp')
