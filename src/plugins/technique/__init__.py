@@ -67,7 +67,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'technique')==0:
         await res_logic.finish()
     img_path = "file:///D://QQ//Bot//mdt-数据//计算向//"
-    await bot.send(event=event,message="是小撒姐姐做的哦~非常的实用呢\n"+MessageSegment.image(file = img_path+"逻辑介绍.jfif"))
+    await bot.send(event=event,message="是小撒姐姐做的哦~非常的实用呢(已更新至135)\n"+MessageSegment.image(file = img_path+"逻辑介绍.jpg"))
     await res_logic.finish()
 
 ###颜色列表
