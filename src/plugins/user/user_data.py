@@ -114,8 +114,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
 
         if df_us.loc[QQ].signinexp==10:
             bonus*=2
-        week = df_us.loc[QQ].contin_signin/7
-        if week == int(week):
+        if df_us.loc[QQ,'contin_signin'] % 5 == 0:
             bonus*=2
         
     else:
@@ -143,7 +142,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
 
         if exp==10:
             bonus*=2
-        if week == int(week):
+        if df_us.loc[QQ,'contin_signin']%5 == 0:
             bonus*=2
         
         cu += int(random.random()*20*(1+bonus))
@@ -259,8 +258,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     level_text = f'lv.{level}'    
     exp_text = f'exp={df_us.loc[QQ].exp}' 
     exp_level_text_width, exp_level_text_height = level_font.getsize(level_text)    
-    exp_bar = f'{int(df_us.loc[QQ].exp)}/{req_exp(level)}' 
-    exp_bar_text_width, exp_bar_text_height = level_font.getsize(exp_bar)   
+    exp_bar = f'{int(df_us.loc[QQ].exp)}/{req_exp(level)}'  
     #bonus
     bonus_text = f'bonus + {int(bonus*100)} %'
     bonus_text_width, bonus_text_height = mdt_text_font.getsize(exp_bar)   

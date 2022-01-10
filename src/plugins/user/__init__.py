@@ -110,6 +110,8 @@ user_lock_background = on_command("锁定背景",rule = endswith("锁定背景")
 
 @user_lock_background.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'user')==0:
+        await user_signin.finish()
     from src.plugins.user.utils import check_service
     result = check_service(event.user_id,'锁定背景')
     if result==0:
@@ -119,7 +121,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"你的材料不够，请准备好材料后再来哦！")
         await user_lock_background.finish()
     else:
-        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请私聊茉莉发送图片，背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请私聊茉莉或lc发送图片，背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
         await bot.send_group_msg(group_id=180707407, message=f'{event.user_id}发起了锁定背景申请！')
         await user_lock_background.finish()
     
