@@ -58,7 +58,8 @@ change = on_startswith("魔法",endswith("魔法"),priority=6,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await change.finish()
-    await bot.send(event,message="这里是茉莉的魔法实验室！目前功能：\n变猫娘：@你想变的玩家\n小天才：***\n更多功能正在测试中！")
+    await bot.send(event,message="这里是茉莉的魔法实验室！目前功能：\n变猫娘：@你想变的玩家\n小天才：***\n主世界重生\n更多功能正在测试中！\n\
+欢迎来一起编辑词条！词条连接：https://docs.qq.com/sheet/DVFFVbWdlalVkcHp2")
 
 change_catgirl = on_command("变猫娘",priority=5,block=True)
 
@@ -93,4 +94,25 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     import pandas as pd
     data = pd.read_csv(os.path.join(THIS_PATH,'genius.csv'), index_col=0)
     await bot.send(event,message=data.loc[random.choice(data.index)].text.replace('%name',text))
+    await change.finish()
+    
+change = on_regex("^(主世界重生|投胎模拟器)$",priority=5,block=True)
+
+@change.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'chatting')==0:
+        await change.finish()
+    text = str(event.message)[4:]
+    import random
+    import pandas as pd
+    data = pd.read_csv(os.path.join(THIS_PATH,'pop_dis.csv'))
+    pop_total = 7810184000
+    pop_index = random.randint(0,pop_total)
+    for row in range(data.shape[0]):
+        pop_index -= data.loc[row]['pop']
+        if pop_index<=0:
+            msg = MessageSegment.reply(event.message_id)+'.'+MessageSegment.at(event.user_id)
+            msg+='刷新了开局，并重生在了'+data.loc[row]['country']+' ('+str(data.loc[row,'per'])+' %)'
+            await bot.send(event,message=msg)
+            await change.finish()
     await change.finish()
