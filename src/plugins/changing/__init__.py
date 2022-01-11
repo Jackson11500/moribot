@@ -1,19 +1,13 @@
 # import nonebot
-
-
 from nonebot import get_driver, permission
 
-from .config import Config
-
 from nonebot import on_regex,on_command,on_notice,on_message
-from nonebot.rule import to_me,startswith
+from nonebot.plugin import on_startswith
+from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
-
-global_config = get_driver().config
-config = Config(**global_config.dict())
 
 from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import checkallow
@@ -22,6 +16,10 @@ from src.plugins.__toolbox import checkallow
 from random import choice
 
 img_path = "file:///D://QQ//Bot//定向回复//"
+
+import os
+from configs.path_config import PLUGINS_PATH
+THIS_PATH = os.path.join(PLUGINS_PATH,'changing')
 
 
 ##变猫娘
@@ -54,7 +52,15 @@ def getcatgirl():
                    '小曼','小新','小露','艾尔莎',
                    'anuke','臭猫'])
 
-change_catgirl = on_command("变猫娘",priority=3,block=True)
+change = on_startswith("魔法",endswith("魔法"),priority=6,block=True)
+
+@change.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'chatting')==0:
+        await change.finish()
+    await bot.send(event,message="这里是茉莉的魔法实验室！目前功能：\n变猫娘：@你想变的玩家\n小天才：***\n更多功能正在测试中！")
+
+change_catgirl = on_command("变猫娘",priority=5,block=True)
 
 @change_catgirl.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -73,3 +79,18 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     else:
         await bot.send(event,message=MessageSegment.at(event.user_id)+"使用了猫娘变化大法，把"+MessageSegment.at(sb[0])+"变成了["+getcatgirl()+"]")
     await change_catgirl.finish()
+    
+change = on_startswith("小天才：",priority=5,block=True)
+
+@change.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'chatting')==0:
+        await change.finish()
+    text = str(event.message)[4:]
+    if len(text)>10:
+        await bot.send(event,message="唔~谁家的小天才名字这么长啊")
+    import random
+    import pandas as pd
+    data = pd.read_csv(os.path.join(THIS_PATH,'genius.csv'), index_col=0)
+    await bot.send(event,message=data.loc[random.choice(data.index)].text.replace('%name',text))
+    await change.finish()

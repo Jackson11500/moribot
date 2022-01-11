@@ -18,6 +18,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 我已经在努力学习了！可没有摸鱼呢\n\
 输入'茉莉的命令大全'查看支持的主要命令\n\
 输入以下命令以查询相关功能大类：\n\
+* 魔法\n\
 * 实用资料\n\
 * 随机图片\n\
 * 签到\n\
@@ -26,7 +27,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 * 小游戏\n\
 * 群组服务\n\
 * 交易\n\
-如果命令没反应，可能是茉莉暂时离开或者未开启服务哦，请确认茉莉当前状态。\n\
+如果命令没反应，可能是你的命令不对或者本群未开启服务哦，请确认茉莉当前群组状态。\n\
 输入'群组服务'以查看模式，管理或群主可输入'群组状态设置'来进行调整！"
     await morisama.finish(text)
     
