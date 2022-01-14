@@ -74,7 +74,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     msg = choice(['?','¿','？','(。´・ω・)ん?',"问号","需要茉莉酱帮忙吗？","有想问的直接说出来啊，扭扭捏捏地干什么","需要我帮你查核心数据库吗？", 
         at+"在纠结些什么呢？",MessageSegment.image(img_path+"问号//a (1).jpg"),MessageSegment.image(img_path+"问号//a (2).jpg"),
         MessageSegment.image(img_path+"问号//a (3).jpg"),MessageSegment.image(img_path+"问号//a (1).png"),
-        MessageSegment.image(img_path+"问号//4.jpg"),MessageSegment.image(img_path+"问号//5.jpg")
+        MessageSegment.image(img_path+"问号//4.jpg"),MessageSegment.image(img_path+"问号//5.jpg"),MessageSegment.image(img_path+"问号//6.jpg")
         ])
     await bot.send(event=event,message=msg)
     await chat.finish()
