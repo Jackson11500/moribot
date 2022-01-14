@@ -105,6 +105,16 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await user_register.finish()
 
+def get_forward_msg(bot,event,source_file):
+    msg_list = []
+    sender = {
+    "type": "node",
+    "data": {
+        "id":str(event.message_id)
+    },
+    }
+    msg_list.append(sender)
+    return msg_list
 ###锁定背景
 user_lock_background = on_command("锁定背景",rule = endswith("锁定背景"), priority=5,block=True)
 
@@ -122,6 +132,15 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await user_lock_background.finish()
     else:
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请私聊茉莉或lc发送图片，背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
+        msg_list = []
+        sender = {
+        "type": "node",
+        "data": {
+            "id":str(event.message_id)
+        },
+        }
+        msg_list.append(sender)
+        await bot.send_group_forward_msg(group_id=180707407,messages = msg_list)
         await bot.send_group_msg(group_id=180707407, message=f'{event.user_id}发起了锁定背景申请！')
         await user_lock_background.finish()
     

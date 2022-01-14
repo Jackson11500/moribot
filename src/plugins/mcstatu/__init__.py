@@ -4,14 +4,11 @@ from nonebot import get_driver
 global_config = get_driver().config
 
 from nonebot import on_command
-from nonebot.rule import endswith,startswith
+from nonebot.rule import endswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
-from nonebot.permission import SUPERUSER
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
-
-from src.plugins.__toolbox import checkallow
 
 from configs.path_config import PLUGINS_PATH
 import os

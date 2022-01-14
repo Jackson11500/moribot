@@ -43,6 +43,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await morisama.finish()
 
 ##
+'''
 morisama = on_command("茉莉状态",endswith('茉莉状态'), priority=2,block=True)
 modename = {0:"冬眠",1:"打盹",2:"游玩",3:"发情"}
 modedes = {0:"除了呼唤与修改状态指定外忽视一切指令",1:"仅会接受主动呼唤相关的内容",2:"会积极主动参与聊天中",3:"开放隐藏对话"}
@@ -107,3 +108,4 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.set_group_card(group_id = event.group_id,user_id=bot.self_id,card='小狐狸茉莉 '+str(modename[switch_mode])+'中...')
     await bot.send(event=event,message=f"茉莉已成功切换至：[{switch_mode}]{modename[switch_mode]}中...\n({modedes[switch_mode]})")
     await morisama.finish()
+'''
