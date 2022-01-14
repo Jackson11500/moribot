@@ -129,7 +129,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         #7日签到
         week = df_us.loc[QQ,'contin_signin']/7
         if week == int(week):
-            th = int(week)
+            th += 1
             df_us.loc[QQ,'exp']+=3*week
             
         #计算随机经验的加成
