@@ -15,10 +15,8 @@ from src.plugins.__toolbox import checkallow
 ##参数
 from random import choice
 
-img_path = "file:///D://QQ//Bot//定向回复//"
-
 import os
-from configs.path_config import PLUGINS_PATH
+from configs.path_config import PLUGINS_PATH,RIMAGE_PATH
 THIS_PATH = os.path.join(PLUGINS_PATH,'changing')
 
 
@@ -73,7 +71,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     elif len(sb)>1:
         await bot.send(event,message=+"一次只能变一个！不可以贪心~")
     elif len(sb)==0 and event.is_tome():
-        msg=choice(["喵~~"+MessageSegment.image(img_path+"kimo茉莉//猫娘.jpg"),"茉莉是小狐狸！"])
+        msg=choice(["喵~~"+MessageSegment.image(os.path.join(RIMAGE_PATH,"kimo茉莉","猫娘.jpg")),"茉莉是小狐狸！"])
         await bot.send(event,message=msg)
     elif sb == ['null'] or len(sb)==0:
         await bot.send(event,message=MessageSegment.at(event.user_id)+"挥动了法杖，一不小心把自己变成了["+getcatgirl()+"]")

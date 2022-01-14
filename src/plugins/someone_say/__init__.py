@@ -12,7 +12,7 @@ from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
 
 from src.plugins.__toolbox import checkallow
 
-from configs.path_config import PLUGINS_PATH,FONT_PATH
+from configs.path_config import PLUGINS_PATH,FONT_PATH,RIMAGE_PATH
 
 import os
 SOMEONE_RES_PATH = os.path.join(PLUGINS_PATH,'someone_say','resources')
@@ -23,7 +23,7 @@ someonesay = on_startswith("有人说",rule = endswith("有人说"), priority=3,
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
         await someonesay.finish()
-    await bot.send(event=event,message="茉莉的名人名言系列(需要加上中文冒号哦)~~目前支持\n鲁迅说：\n年号：\n千代：\n宁宁：\nnobeta：\n气晕：\n追杀图：")
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(RIMAGE_PATH,'命令大全','有人说.png')))
     await someonesay.finish()
     
 

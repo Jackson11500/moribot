@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 #主目录
 MAIN_PATH = str(Path(".").absolute())
@@ -10,7 +11,8 @@ FONT_PATH = str(Path("resources/fonts").absolute())
 IMAGE_PATH = str(Path("resources/img").absolute())
 # 用户数据路径
 USER_PATH = str(Path("data/userdata").absolute())
-
+# 定向回复图片路径
+RIMAGE_PATH = str(Path("resources/img/reply").absolute())
 
 '''
 def init_path():

@@ -6,14 +6,15 @@ global_config = get_driver().config
 from nonebot import on_command,on_startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
-from nonebot.permission import SUPERUSER
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
+from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 
 from src.plugins.__toolbox import checkallow
 
+from configs.path_config import RIMAGE_PATH
+import os
 ###
-img_path = "file:///D://QQ//Bot//定向回复//随机包"
+img_path = os.path.join(RIMAGE_PATH,'随机包')
 
 pic_dict = {
     'kimo':['茉莉','狐狸','kimo','kimo酱'],
@@ -93,21 +94,18 @@ def count_figure():
     msg_build = "茉莉已收藏了以下系列的图片！\n"
     count_fig=0
     for pic_key in pic_dict:
-        ran_img_path = "D://QQ//Bot//定向回复//随机包//"+pic_key
-        count_fig_s = len(os.listdir(ran_img_path))
+        count_fig_s = len(os.listdir(os.path.join(img_path,pic_key)))
         count_fig+=count_fig_s
         msg_build+="随机"+pic_dict[pic_key][0]+f'  ({count_fig_s})'+'\n'
-        
     msg_build+='总计 '+str(count_fig)+' 个图片'
     msg_build+='\n如果你也给茉莉投稿图片，请发送\'投稿图片指南\'哦'
     return msg_build
 
 def send_random_picture(picture_type):
-    ran_img_path = "D://QQ//Bot//定向回复//随机包//"+picture_type
-    import os,random
-    filelist = [x for x in os.listdir(ran_img_path) if os.path.isfile(ran_img_path+"//"+ x)]
+    import random
+    filelist = [x for x in os.listdir(os.path.join(img_path,picture_type)) if os.path.isfile(os.path.join(img_path,picture_type,x))]
     random_index = random.randrange(1,len(filelist),1)
-    return ran_img_path+"//"+ filelist[random_index],random_index,len(filelist)
+    return os.path.join(img_path,picture_type,filelist[random_index]),random_index,len(filelist)
     
     
     

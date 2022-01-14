@@ -10,7 +10,7 @@ from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+from nonebot.adapters.cqhttp import Bot,Event,MessageSegment,GroupMessageEvent
 
 from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import checkallow
