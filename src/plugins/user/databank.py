@@ -1,4 +1,3 @@
-
 service_list = {
     '图片':{'level':0,'cu':1,'pd':0,'ti':0,'th':0},
     '有人说':{'level':0,'cu':0,'pd':1,'ti':0,'th':0},
@@ -20,4 +19,8 @@ building = {
 sector = {
     15 : {'name':'groundZero','cu':150 ,'pd':50,'ti':0,'th':0,'lagpro':5,'procu':1 ,'propd':1,'proti':0,'proth':0,'bonus':1},
     86 : {'name':'frozenForest ','cu':150 ,'pd':250,'ti':0,'th':0,'lagpro':8,'procu':2 ,'propd':2,'proti':0,'proth':0,'bonus':2}
+}
+
+achievement = {
+    '图片收藏家':{'daily_exp':0,'daily_cu':0, 'daily_pd':0,'daily_ti':0,'daily_th':0,'bonus':0.01}
 }

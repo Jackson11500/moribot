@@ -6,7 +6,7 @@ import os
 THIS_PATH = os.path.join(PLUGINS_PATH,'user')
 
 achievement_list = {'图片收藏家'}   #level=多少张图,one_cu = level//10,one_pd = level//10, bonus = level//100
-
+from src.plugins.user.databank import achievement
 '''
 图片收藏家成就：发送高质量图片满100张并成功被茉莉收录进'随机图片系列'即可。
 每100张图获得永久1% bonus(吃bonus倍率加成)
@@ -28,7 +28,7 @@ achi_list ={
 }
 
 
-def add_achievement(QQ,ach_name,level, one_exp=0 ,one_cu = 0,one_pd = 0,one_ti = 0,one_th = 0,daily_exp = 0, daily_cu = 0,daily_pd = 0,daily_ti = 0,daily_th = 0,bonus = 0):
+def add_achievement(QQ,ach_name,level, one_exp=0 ,one_cu = 0,one_pd = 0,one_ti = 0,one_th = 0):
     '''
     增加一个成就，返回说明
     '''
@@ -39,12 +39,12 @@ def add_achievement(QQ,ach_name,level, one_exp=0 ,one_cu = 0,one_pd = 0,one_ti =
     achi = {'acquiretime':round(time.time()),
             'ach_name':ach_name,
             'level':level,
-            'daily_exp':daily_exp,
-            'daily_cu':daily_cu,
-            'daily_pd':daily_pd,
-            'daily_ti':daily_ti,
-            'daily_th':daily_th,
-            'bonus':bonus
+            'daily_exp':int(achievement[ach_name]['daily_exp']*level),
+            'daily_cu':int(achievement[ach_name]['daily_exp']*level),
+            'daily_pd':int(achievement[ach_name]['daily_pd']*level),
+            'daily_ti':int(achievement[ach_name]['daily_ti']*level),
+            'daily_th':int(achievement[ach_name]['daily_th']*level),
+            'bonus':int(achievement[ach_name]['bonus']*level)
             }
     
     ACH_PATH = os.path.join(USER_PATH, str(QQ),'achievement.csv')
@@ -54,9 +54,15 @@ def add_achievement(QQ,ach_name,level, one_exp=0 ,one_cu = 0,one_pd = 0,one_ti =
     else:
         df_ach=pd.read_csv(ACH_PATH, index_col=0)
         df_ach['acquiretime'] = df_ach['acquiretime'].apply(str) + '\t'
-        df_ach.append(pd.Series(data=achi,name = QQ)).fillna(0)
-        df_ach.to_csv(ACH_PATH)
-        
+        if not ach_name in df_ach.ach_name.tolist():
+            df_ach.append(pd.Series(data=achi,name = QQ)).fillna(0)
+            df_ach.to_csv(ACH_PATH)
+        else:
+            row = df_ach.index.tolist()[df_ach.ach_name.tolist().index(ach_name)]
+            df_ach.loc[row,'level'] += achi['level']
+            for col in df_ach.columns.tolist()[3:]:
+                df_ach.loc[row,col] = int(df_ach.loc[row,'level'] * achievement[ach_name][col])
+            df_ach.to_csv(ACH_PATH)
     
     df_us=pd.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
     df_us['registertime'] = df_us['registertime'].apply(str) + '\t'

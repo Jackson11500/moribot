@@ -204,7 +204,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     count = command[1]
     
     import src.plugins.user.achievement as ach
-    ach.add_achievement(int(id),ach_name = '图片收藏家',level = int(count),one_cu = int(count)//10,one_pd = int(count)//10,bonus = int(count)//100)
+    ach.add_achievement(int(id),ach_name = '图片收藏家',level = int(count),one_cu = int(count)//10,one_pd = int(count)//10)
     msg = f'已成功为{id}添加永久成就：图片收藏家({int(count)})'
     msg += f'\n获得奖励：铜+{int(count)//10},铅+{int(count)//10}'
     msg += f'\nbonus+{int(count)//100}'

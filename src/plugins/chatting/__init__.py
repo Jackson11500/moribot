@@ -181,9 +181,16 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await chat.finish()
         
-    from random import choice
-    msg = choice([MessageSegment.image(os.path.join(RIMAGE_PATH,"哼哼喵.jpg")),MessageSegment.image(os.path.join(RIMAGE_PATH,"哼哼啊.jpg"))])
-    await bot.send(event=event,message=MessageSegment.image(RIMAGE_PATH+msg))
+    import random
+    at = MessageSegment.at(event.user_id)
+    ranmsg = []
+    title = "哼哼啊"
+    filelist = [x for x in os.listdir(os.path.join(RIMAGE_PATH,title)) if os.path.isfile(os.path.join(RIMAGE_PATH,title,x))]
+    if random.random() < len(ranmsg)/(len(ranmsg)+len(filelist)):
+        msg = random.choice(ranmsg)
+    else:
+        msg = MessageSegment.image(file = "file:///"+os.path.join(RIMAGE_PATH,title,filelist[random.randrange(1,len(filelist),1)]))
+    await bot.send(event=event,message=msg)
     await chat.finish()
 
 #@茉莉
