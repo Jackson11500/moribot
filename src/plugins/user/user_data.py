@@ -416,6 +416,8 @@ def ranking_list():
     import os
     df_us = pd.read_csv(os.path.join(MAIN_PATH,'data','alluserdata.csv'), index_col=0)
     df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
+    
+    df_us_act = df_us[df_us['contin_signin'] >= df_us['contin_signin'].max()*0.8]
 
     from PIL import Image, ImageDraw, ImageFont
     width = 2000
@@ -441,12 +443,7 @@ def ranking_list():
     
     
     # 加载头图
-    sign_pic_path = os.path.join(IMAGE_PATH,'signin')
-
-    import random
-    filelist = [x for x in os.listdir(sign_pic_path) if os.path.isfile(sign_pic_path+"\\"+ x)]
-    random_index = random.randrange(1,len(filelist),1)
-    draw_top_img: Image.Image = Image.open(sign_pic_path+"\\"+ filelist[random_index])
+    draw_top_img: Image.Image = Image.open(os.path.join(IMAGE_PATH,'signin',"FHD_BG_02.jpg"))
     # 调整头图宽度
     top_img_height = int(width * draw_top_img.height / draw_top_img.width)
     draw_top_img = draw_top_img.resize((width, top_img_height))
@@ -495,7 +492,7 @@ def ranking_list():
         ImageDraw.Draw(background).text(xy=(locx_type,y),
                                         text=n_type, font=msjh_font, align='m',anchor='mt',
                                         fill=(255, 102, 51))  # 首行
-        median=int(median)
+        median=round(median,1)
         ave=round(ave,1)
         max=int(max)
         ImageDraw.Draw(background).text(xy=(locx_median,y),
@@ -523,7 +520,7 @@ def ranking_list():
         background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items',f'item-{item_name}.png'),
                                 size = 80,box = (locx_type-20, y))
         
-        median=int(median)
+        median=round(median,1)
         ave=round(ave,1)
         max=int(max)
         ImageDraw.Draw(background).text(xy=(locx_median,y),
@@ -538,28 +535,28 @@ def ranking_list():
         return background
 
 
-    draw_line(this_height,'属性|材料','中位数','平均数','第一名')
+    draw_line(this_height,'属性|材料','全体平均','活跃平均','最高分！')
     
     this_height = this_height+interval
-    draw_line_num(this_height,'经验值',df_us['exp'].median(),df_us['exp'].mean(),df_us['exp'].max())
+    draw_line_num(this_height,'经验值',df_us['exp'].mean(),df_us_act['exp'].mean(),df_us['exp'].max())
     
     this_height = this_height+interval
-    draw_line_num(this_height,'连续签到',df_us['contin_signin'].median(),df_us['contin_signin'].mean(),df_us['contin_signin'].max())
+    draw_line_num(this_height,'连续签到',df_us['contin_signin'].mean(),df_us_act['contin_signin'].mean(),df_us['contin_signin'].max())
     
     this_height = this_height+interval
-    draw_line_num(this_height,'-等级-',df_us['level'].median(),df_us['level'].mean(),df_us['level'].max())
+    draw_line_num(this_height,'-等级-',df_us['level'].mean(),df_us_act['level'].mean(),df_us['level'].max())
     
     this_height = this_height+interval+30
-    background=draw_line_pic(background,this_height,'copper',df_us['cu'].median(),df_us['cu'].mean(),df_us['cu'].max())
+    background=draw_line_pic(background,this_height,'copper',df_us['cu'].mean(),df_us_act['cu'].mean(),df_us['cu'].max())
 
     this_height = this_height+interval
-    background=draw_line_pic(background,this_height,'lead',df_us['pd'].median(),df_us['pd'].mean(),df_us['pd'].max())
+    background=draw_line_pic(background,this_height,'lead',df_us['pd'].mean(),df_us_act['pd'].mean(),df_us['pd'].max())
     
     this_height = this_height+interval
-    background=draw_line_pic(background,this_height,'titanium',df_us['ti'].median(),df_us['ti'].mean(),df_us['ti'].max())
+    background=draw_line_pic(background,this_height,'titanium',df_us['ti'].mean(),df_us_act['ti'].mean(),df_us['ti'].max())
     
     this_height = this_height+interval
-    background=draw_line_pic(background,this_height,'thorium',df_us['th'].median(),df_us['th'].mean(),df_us['th'].max())
+    background=draw_line_pic(background,this_height,'thorium',df_us['th'].mean(),df_us_act['th'].mean(),df_us['th'].max())
     
     background = background.convert("RGB")
     saveloc = os.path.join(THIS_PATH,'ls_image','ranking_list.jpg')
