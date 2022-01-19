@@ -32,9 +32,10 @@ pic_dict = {
     '小恶魔':['小恶魔','小emo'],
     '小伞':['小伞','多多良小伞','多多良小鼬'],
     '水月':['水月','天幻'],
+    '透明药':['透明药','chitose','klp'],
 
-    '二次元':['二次元','二刺螈'],
-    '妹子':['妹子'],
+    '二次元':['二次元','二刺螈','妹子'],
+    '壁纸':['壁纸','琉璃'],
     '秘封':['秘封'],
     '东方':['东方','车万'],
     '三色':['三色','三色绘恋'],
@@ -42,14 +43,13 @@ pic_dict = {
     '白毛狐狸':['白毛狐狸','白狐'],
     'BlueArchive':['BA','BlueArchive','ba'],
     'AA':['AA','AscixArt'],
+    '9-nine':['9-nine','9nine'],
     
     '群星':['科幻','stellaris','群星']
 }
 
-
-
 ###随机图片
-randomfig = on_startswith("随机", priority=3,block=True)
+randomfig = on_startswith("随机", priority=11,block=True)
 @randomfig.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'random_pic')==0:
@@ -64,15 +64,15 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if pic_type == "图片":
         msg_build = count_figure()
         await randomfig.finish(msg_build)
-        
     for pic_key in pic_dict:
         if pic_type in pic_dict[pic_key]:
             pic,index,total = send_random_picture(pic_key)
             await bot.send(event=event,message=event.message+f": {index}/{total}\n"+MessageSegment.image(file = "file:///"+pic))
             await randomfig.finish()
-    
     await randomfig.finish("？")
-    
+
+
+
 ###投稿指南
 figintro = on_command("投稿图片指南", priority=3,block=True)
 

@@ -7,6 +7,7 @@ from nonebot import on_regex,on_command,on_notice,on_message
 from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
+from nonebot.adapters.cqhttp import PRIVATE,PRIVATE_FRIEND
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment,PokeNotifyEvent,GroupMessageEvent
 
@@ -30,11 +31,7 @@ pokeme = on_notice(_poke_me, priority=chat_priority,block=True)
 @pokeme.handle()
 async def handle_first_receive(bot: Bot, event: PokeNotifyEvent, state: T_State):
     if event.group_id != None:
-        import pandas as pd
-        group_status=pd.read_csv(os.path.join(PLUGINS_PATH,'group_status.csv'), index_col=0)
-        if int(group_status.loc[str(event.group_id),'chatting'])==0:
-            await pokeme.finish()
-        
+        await pokeme.finish()
     from random import choice
     msg = choice(['唔...别摸了，毛都要给撸秃了','摸起来舒服吗',"不行那里不可以(´///ω/// `)","变态！！不许乱摸","好吧~_~，就一下下哦……唔~好了……都两下了……(害羞)", "真是好奇怪的要求的说～","温柔一点哦"])
     await bot.send(event=event,message=msg)
@@ -124,7 +121,7 @@ chat = on_regex("^吸狐狸$",priority=chat_priority,block=True)
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await chat.finish()
-    await bot.send(event=event,message=MessageSegment.image(RIMAGE_PATH+"吸狐狸.jpg"))
+    await bot.send(event=event,message=MessageSegment.image("file:///"+RIMAGE_PATH+"吸狐狸.jpg"))
     await chat.finish()
 
 ##贴贴
@@ -134,7 +131,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await chat.finish()
         
-    await bot.send(event=event,message=MessageSegment.image(RIMAGE_PATH+"火星了.jpg"))
+    await bot.send(event=event,message=MessageSegment.image("file:///"+RIMAGE_PATH+"火星了.jpg"))
     await chat.finish()
 
 ##
@@ -146,7 +143,21 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await chat.finish()
         
     from random import choice
-    msg = choice([MessageSegment.image(os.path.join(RIMAGE_PATH,"几把","1.jpg")),MessageSegment.image(os.path.join(RIMAGE_PATH,"几把","2.jpg")),'不可以说脏话~'])
+    msg = choice([MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"几把","1.jpg")),MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"几把","2.jpg")),'不可以说脏话~'])
+    await bot.send(event=event,message=msg)
+    await chat.finish()
+
+##
+chat = on_regex("(^随机涩图$)|(^随机色图$)",priority=chat_priority,block=True)
+
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'chatting')==0:
+        await chat.finish()
+        
+    from random import choice
+    msg = choice(['不可以色色~~','茉莉是不可能加这个功能的！','你在想些什么呢baka','唔~死宅真恶心~',
+                  '没有！只能把你变成色图',MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"不许色色.jpg"))])
     await bot.send(event=event,message=msg)
     await chat.finish()
 
@@ -159,7 +170,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await chat.finish()
         
     from random import choice
-    await bot.send(event=event,message=MessageSegment.image(os.path.join(RIMAGE_PATH,"找笨蛋.jpg")))
+    await bot.send(event=event,message=MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"找笨蛋.jpg")))
     await chat.finish()
 
 ##
@@ -171,7 +182,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await chat.finish()
         
     from random import choice
-    await bot.send(event=event,message=MessageSegment.image(os.path.join(RIMAGE_PATH,"救命啊.jpg")))
+    await bot.send(event=event,message=MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"救命啊.jpg")))
     await chat.finish()
 
 chat = on_regex("114514|1919810|哼哼啊啊啊",priority=chat_priority,block=True)
