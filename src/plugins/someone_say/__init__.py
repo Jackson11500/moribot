@@ -77,6 +77,52 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()    
       
 ###自定义图
+someonesay = on_startswith("喜报：", priority=5,block=True)
+@someonesay.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'someone_say')==0:
+        await someonesay.finish()
+        
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish("制作图片需要铅为底，挖点再回来吧！\t(可能是没注册或是铅不够)")
+        
+    says = str(event.message)[3:]
+    
+    from PIL import Image, ImageDraw, ImageFont
+    import os
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'喜报.png'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, '极字经典楷体.ttf'))
+    text_font = ImageFont.truetype(font_path, someone_fig.width // 12)
+    
+    width = int(someone_fig.width/2)
+    text_width = someone_fig.width/5*3
+    this_height = int(someone_fig.height*1/2)
+    #换行脚本
+    last_cut = 0
+    for cut in range(len(says)):
+        w, h = ImageDraw.Draw(someone_fig).textsize(says[last_cut:cut], font=text_font) 
+        if w<text_width:
+            continue
+        #开始绘图
+        ImageDraw.Draw(someone_fig).text(xy = (width, this_height),
+                                         text = says[last_cut:cut], align='left',anchor='mb', 
+                                         font=text_font,fill=(256, 0, 0))
+        this_height += h - 5
+        last_cut = cut 
+        if this_height >=int(someone_fig.height/10*9):
+            await someonesay.finish('太长了，鲁迅说不完...')
+            await someonesay.finish() 
+    ImageDraw.Draw(someone_fig).text(xy = (width, this_height),
+                                    text = says[last_cut:], align='left',anchor='mb', 
+                                    font=text_font,fill=(256, 0, 0))
+        
+    #结束换行
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()    
+      
+###自定义图
 someonesay = on_startswith("年号：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
