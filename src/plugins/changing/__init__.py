@@ -86,12 +86,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await change.finish()
     text = str(event.message)[4:]
-    if len(text)>10:
-        await bot.send(event,message="唔~谁家的小天才名字这么长啊")
+    sb = At(event.json())
     import random
     import pandas as pd
     data = pd.read_csv(os.path.join(THIS_PATH,'genius.csv'), index_col=0)
-    await bot.send(event,message=data.loc[random.choice(data.index)].text.replace('%name',text))
+    if len(sb)==1:
+        await bot.send(event,message="不需要@的，直接打出名字就好了！")
+        await change.finish()        
+    elif len(text)>10:
+        await bot.send(event,message="唔~谁家的小天才名字这么长啊")
+    elif len(text)==0:
+        await bot.send(event,message="?")
+    else:
+        await bot.send(event,message=data.loc[random.choice(data.index)].text.replace('%name',text))
     await change.finish()
     
 change = on_regex("^(主世界重生|投胎模拟器)$",priority=5,block=True)

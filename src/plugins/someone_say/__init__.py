@@ -206,10 +206,11 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
         await someonesay.finish()
     from src.plugins.user.utils import check_service
+
     if check_service(event.user_id,'有人说')!=99:
         await someonesay.finish("制作图片需要铅为底，挖点再回来吧！\t(可能是没注册或是铅不够)")
     says = str(event.message)[3:]
-    
+
     from PIL import Image, ImageDraw, ImageFont
     import os
     someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'气晕.png'))
@@ -224,6 +225,36 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
     await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()   
+        
+###自定义图
+someonesay = on_startswith("小本本：", priority=5,block=True)
+@someonesay.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'someone_say')==0:
+        await someonesay.finish()
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish("制作图片需要铅为底，挖点再回来吧！\t(可能是没注册或是铅不够)")
+    says = str(event.message)[4:]
+    if len(says)>=6:
+        await someonesay.finish('字数超出限制了的说~')   
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+    import os
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'小本本.jpg'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, 'msyhbd.ttc'))
+    font = ImageFont.truetype(font_path, someone_fig.width // 15)
+    text_width, text_height = font.getsize(says)  
+        
+    txt=Image.new('L', (500,500))
+    d = ImageDraw.Draw(txt)
+    d.text(xy=(0,0),text=says, font=font, align='left',anchor='lt',fill=255)
+    w=txt.rotate(-30,  expand=1)
+    someone_fig.paste( ImageOps.colorize(w, (0,0,0), (238, 238, 238)), (int(someone_fig.width*0.52-text_width/2),int(someone_fig.height*0.6)),  w)
+    
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()   
+        
         
 ###自定义图
 someonesay = on_startswith("追杀图：", priority=5,block=True)
