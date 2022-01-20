@@ -71,7 +71,51 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
             await randomfig.finish()
     await randomfig.finish("？")
 
-
+###随机图片
+randomfig = on_startswith("图包-随机", priority=10,block=True)
+@randomfig.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'random_pic')==0:
+        await randomfig.finish()
+    from src.plugins.user.utils import check_service
+    if check_service(event.user_id,'图包')!=99:
+        await randomfig.finish("你的铜不够制作图片，炼点再回来吧！\n(可能是没注册或是铜不够)")
+        
+    pic_type = str(event.message)[5:]
+    if len(pic_type)>7:
+        await randomfig.finish()
+    if pic_type == "图片":
+        msg_build = count_figure()
+        await randomfig.finish(msg_build)
+    
+    for pic_key in pic_dict:
+        if pic_type in pic_dict[pic_key]:
+            pic,index,total = send_random_picture(pic_key)
+            
+            msg_list = []
+            main = {
+            "type": "node",
+            "data": {
+                "name": f"无情的发图茉莉姬",
+                "uin": f"{bot.self_id}",
+                "content": f"下面茉莉发送的是：随机{pic_type}，这个图包中总共含有{total}张图",
+            },
+            }
+            msg_list.append(main)
+            for i in range(10):
+                pic,index,total = send_random_picture(pic_key)
+                main = {
+                "type": "node",
+                "data": {
+                    "name": f"随机{pic_type}：{index}",
+                    "uin": f"{bot.self_id}",
+                    "content": MessageSegment.image(file = "file:///"+pic),
+                },
+                }
+                msg_list.append(main)
+            await bot.send_group_forward_msg(group_id=event.group_id,messages = msg_list)
+            await randomfig.finish()
+    await randomfig.finish("？")
 
 ###投稿指南
 figintro = on_command("投稿图片指南", priority=3,block=True)

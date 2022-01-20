@@ -92,7 +92,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from PIL import Image, ImageDraw, ImageFont
     import os
     someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'喜报.png'))
-    font_path = os.path.abspath(os.path.join(FONT_PATH, '极字经典楷体.ttf'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
     text_font = ImageFont.truetype(font_path, someone_fig.width // 12)
     
     width = int(someone_fig.width/2)
