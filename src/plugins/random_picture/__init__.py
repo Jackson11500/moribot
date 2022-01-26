@@ -9,6 +9,7 @@ from nonebot.adapters import Bot, Event
 
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 
+
 from src.plugins.__toolbox import checkallow
 
 from configs.path_config import RIMAGE_PATH
@@ -36,6 +37,7 @@ pic_dict = {
 
     '二次元':['二次元','二刺螈','妹子'],
     '壁纸':['壁纸','琉璃'],
+    'capoo':['capoo','咖波'],
     '秘封':['秘封'],
     '东方':['东方','车万'],
     '三色':['三色','三色绘恋'],
@@ -44,6 +46,7 @@ pic_dict = {
     'BlueArchive':['BA','BlueArchive','ba'],
     'AA':['AA','AscixArt'],
     '9-nine':['9-nine','9nine'],
+    '石油':['石油'],
     
     '群星':['科幻','stellaris','群星']
 }
@@ -52,6 +55,7 @@ pic_dict = {
 randomfig = on_startswith("随机", priority=11,block=True)
 @randomfig.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    #await randomfig.finish("特殊时期，功能已关闭，请过两天再试哦~~")
     if checkallow(event,'random_pic')==0:
         await randomfig.finish()
     from src.plugins.user.utils import check_service
@@ -75,6 +79,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 randomfig = on_startswith("图包-随机", priority=10,block=True)
 @randomfig.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    #await randomfig.finish("特殊时期，功能已关闭，请过两天再试哦~~")
     if checkallow(event,'random_pic')==0:
         await randomfig.finish()
     from src.plugins.user.utils import check_service
@@ -135,7 +140,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 ###库
 def count_figure():
     import os
-    msg_build = "茉莉已收藏了以下系列的图片！\n"
+    msg_build = "特殊时期，功能已关闭，请过两天再试哦\n茉莉已收藏了以下系列的图片！\n"
     count_fig=0
     for pic_key in pic_dict:
         count_fig_s = len(os.listdir(os.path.join(img_path,pic_key)))

@@ -10,7 +10,7 @@ from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 from nonebot.permission import SUPERUSER
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
+from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment,PrivateMessageEvent
 ###
 #moritest = on_startswith("测试", priority=3, permission=SUPERUSER,block=True)
 async def _poke_me(bot: Bot, event: Event, state: dict):
@@ -64,5 +64,20 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await moritest.finish()
     '''
 
+moritest = on_command("",rule = to_me(),priority=1,block=True)
+
+@moritest.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    await moritest.finish('')
+    '''
+    import src.plugins.user.command as command
+    msg,score = command.user_sign_in(event.user_id)
+    if score == 10:
+        msg = MessageSegment.reply(event.message_id)+msg+MessageSegment.image(file = "file:///D://QQ//Bot//定向回复//+10.jpg")
+    else:
+        msg = MessageSegment.reply(event.message_id)+msg
+    await bot.send(event=event,message='茉莉正在重做整理用户系统！将于明年上线正式版，敬请期待\n'+msg)
+    await moritest.finish()
+    '''
 
     
