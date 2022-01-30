@@ -42,6 +42,26 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event,message=MessageSegment.image(file = "file:///"+os.path.join(PLUGINS_PATH,'greeting','命令说明.png'))) 
     await morisama.finish()
 
+###
+morisama = on_regex("^发送信息|^发送茉莉", priority=5,block=True)
+
+@morisama.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    import os
+    from configs.path_config import PLUGINS_PATH
+    msg_list = []
+    sender = {
+    "type": "node",
+    "data": {
+        "id":str(event.message_id)
+    },
+    }
+    msg_list.append(sender)
+    await bot.send_group_forward_msg(group_id=180707407,messages = msg_list)
+    await bot.send_group_msg(group_id=180707407, message=f'{event.user_id}发送了一条信息！')
+    await bot.send(event=event,message='信息接受成功！请稍微等待处理~')
+    await morisama.finish()
+
 ##
 '''
 morisama = on_command("茉莉状态",endswith('茉莉状态'), priority=2,block=True)

@@ -135,7 +135,6 @@ img_path = "D://QQ//Bot//mdt-数据//"
 source_code = on_command("源码：",aliases={"source=","源码:","source ="},priority=5,block=True)
 @source_code.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    await source_code.finish("特殊时期，功能已关闭，请过两天再试哦~~")
     if checkallow(event,'technique')==0:
         await source_code.finish()
     source_file =  str(event.get_message()).lower()

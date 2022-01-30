@@ -14,7 +14,7 @@ def checkallow(event,name):
     group_name,intro,hidden,chatting,intergroup,little_game,mdt,random_pic,someone_say,technique,user
     '''
     if event.message_type == "private":
-        return 1
+        return 0
     else:
         from configs.path_config import PLUGINS_PATH
         import pandas as pd
