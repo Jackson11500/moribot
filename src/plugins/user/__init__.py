@@ -134,7 +134,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+"你的材料不够，请准备好材料后再来哦！")
         await user_lock_background.finish()
     else:
-        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请发送图片，格式：发送信息+[图片]，发送信息与图片应在同一条信息内；背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'请发送图片，格式：发送信息+[图片]，发送信息与图片应在同一条信息内；或者私聊发送茉莉|lc\n背景审核通过后即可使用！\n图片要求-能在一般的公开平台发布，不符合的图片将不允许通过哦（可以更换）\n长宽比应尽可能接近10:6')
         msg_list = []
         sender = {
         "type": "node",

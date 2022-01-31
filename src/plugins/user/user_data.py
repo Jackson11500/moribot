@@ -134,8 +134,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             
         #计算随机经验的加成
         exp+=random.randrange(1,11,1)    
-        df_us.loc[QQ,'signinexp'] = exp
-        df_us.loc[QQ,'exp']+=exp
+
         while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
             df_us.loc[QQ,'level']+=1
         bonus += (df_us.loc[QQ].level+exp)*0.01
@@ -145,10 +144,17 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         if df_us.loc[QQ,'contin_signin']%5 == 0:
             bonus*=2
         
+        if today == 32:
+            bonus += 0.1*max(df_us.loc[QQ,'contin_signin'],10)
+            exp = max(exp,2)
+        
         cu += int(random.random()*20*(1+bonus))
         pd += int(random.random()*15*(1+bonus))
         ti += int(random.random()*3*(1+bonus))
         th += int(random.random()*0.6*(1+bonus))
+        
+        df_us.loc[QQ,'signinexp'] = exp
+        df_us.loc[QQ,'exp']+=exp
         df_us.loc[QQ,'cu']+=cu
         df_us.loc[QQ,'pd']+=pd
         df_us.loc[QQ,'ti']+=ti
