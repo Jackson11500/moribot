@@ -244,6 +244,33 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()   
         
+###自定义图
+someonesay = on_startswith("猫娘：", priority=5,block=True)
+@someonesay.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'someone_say')==0:
+        await someonesay.finish()
+    from src.plugins.user.utils import check_service
+
+    if check_service(event.user_id,'有人说')!=99:
+        await someonesay.finish("制作图片需要铅为底，挖点再回来吧！\t(可能是没注册或是铅不够)")
+    says = str(event.message)[3:]
+
+    from PIL import Image, ImageDraw, ImageFont
+    import os
+    someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'猫娘.jpg'))
+    msjh_font_path = os.path.abspath(os.path.join(FONT_PATH, 'ruanmeng.ttf'))
+    msjh_text_font = ImageFont.truetype(msjh_font_path, someone_fig.width // 15)
+    text_width, text_height = msjh_text_font.getsize(says)  
+    if text_width>=someone_fig.width/2:
+        await someonesay.finish('字数超出限制了的说~')
+    ImageDraw.Draw(someone_fig).text(xy=(int(someone_fig.width*0.42), int(someone_fig.height*0.82)),
+                                    text=says, font=msjh_text_font, align='center',anchor='mm',
+                                    fill=(135, 206, 250))
+    someone_fig.save(os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg'), 'JPEG')
+    await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
+    await someonesay.finish()   
+        
         
 ###自定义图
 someonesay = on_startswith("气晕：", priority=5,block=True)

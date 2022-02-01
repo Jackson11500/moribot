@@ -213,3 +213,16 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     msg += f'\nbonus+{int(count)//100}'
     await bot.send(event=event,message=msg)
     await user_register.finish()
+
+
+'''
+from nonebot.adapters import Message
+
+red_paper = on_command("*红包", aliases={"*发红包"}, priority=5)
+
+@red_paper.got("city")
+async def handle_city(bot: Bot, event: Event, state: T_State):
+    await weather.reject(city.template("你想查询的城市 {city} 暂不支持，请重新输入！"))
+    
+    await red_paper.finish()
+'''

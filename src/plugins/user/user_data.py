@@ -37,15 +37,16 @@ def get_level_color(level: int):
     生成图片
     '''
     level_color: dict[int, tuple[int, int, int]] = {
-        0: (136, 136, 136),
+        0: (192, 192, 192),
         1: (102, 102, 102),
-        2: (153, 204, 153),
-        3: (221, 204, 136),
-        4: (255, 204, 51),
-        5: (255, 204, 204),
-        6: (247, 119, 127),
-        7: (102, 204, 255),
-        8: (175, 136, 250),
+        2: (100, 149, 237),
+        3: (20, 255, 255),
+        4: (20, 255, 127),
+        5: (255, 255, 20),
+        6: (255, 165, 20),
+        7: (255, 127, 80),
+        8: (255, 20, 255),
+        9: (255, 0, 0),
     }
     return level_color.get(level, (136, 136, 136))
 
@@ -105,8 +106,9 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             th += int(row['daily_th'])
             bonus += int(row['bonus'])*0.01
         del df_ach
+        
     #主加成程序
-    if today==int(df_us.loc[QQ].signindate):  
+    if today==int(df_us.loc[QQ].signindate):  #! 计算个人信息
         exp +=int(df_us.loc[QQ,'signinexp'])
         
         sign_success = False
@@ -116,9 +118,19 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             bonus*=2
         if df_us.loc[QQ,'contin_signin'] % 5 == 0:
             bonus*=2
+        if today == 32:
+            bonus += 0.1*max(df_us.loc[QQ,'contin_signin'],10)
+            exp = max(exp,2)+25
+            cu += 25
+            pd += 25
+            ti += 10
+            th += 3
+        
+        while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
+            df_us.loc[QQ,'level']+=1
         
     else:
-        ##签到
+        ##! 签到
         #是否连续签到
         if df_us.loc[QQ].signindate == today-1:
             df_us.loc[QQ,'contin_signin'] += 1
@@ -133,33 +145,43 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
             df_us.loc[QQ,'exp']+=3*week
             
         #计算随机经验的加成
-        exp+=random.randrange(1,11,1)    
+        random_exp=random.randrange(1,11,1)    
+        if random_exp==10 and random.random()>=0.9:#* 超级幸运
+            random_exp*=2
+        exp+=random_exp
 
-        while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
-            df_us.loc[QQ,'level']+=1
         bonus += (df_us.loc[QQ].level+exp)*0.01
 
-        if exp==10:
+        if random_exp>=10:
+            if random_exp==20:
+                bonus*=2
             bonus*=2
+        
         if df_us.loc[QQ,'contin_signin']%5 == 0:
             bonus*=2
         
         if today == 32:
             bonus += 0.1*max(df_us.loc[QQ,'contin_signin'],10)
-            exp = max(exp,2)
+            exp = max(exp,2)+25
+            cu += 25
+            pd += 25
+            ti += 10
+            th += 3
         
         cu += int(random.random()*20*(1+bonus))
         pd += int(random.random()*15*(1+bonus))
         ti += int(random.random()*3*(1+bonus))
         th += int(random.random()*0.6*(1+bonus))
         
-        df_us.loc[QQ,'signinexp'] = exp
+        df_us.loc[QQ,'signinexp'] = random_exp
         df_us.loc[QQ,'exp']+=exp
         df_us.loc[QQ,'cu']+=cu
         df_us.loc[QQ,'pd']+=pd
         df_us.loc[QQ,'ti']+=ti
         df_us.loc[QQ,'th']+=th
         
+        while df_us.loc[QQ].exp>=req_exp(df_us.loc[QQ].level):
+            df_us.loc[QQ,'level']+=1
         #保存
         df_us.to_csv(os.path.join(USER_PATH, str(QQ),'data.csv'))
     
@@ -238,17 +260,24 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     
     #签到说明
     sign_in_text=""
-    if sign_success:
-        if exp<2:
+    
+    if today == 32:
+        sign_in_text+='新年快乐！！经验+'+str(exp)
+        sign_in_text+='\n已连续签到'+str(int(df_us.loc[QQ].contin_signin))+'天'
+        sign_in_text_width, sign_in_text_height = bd_text_font.getsize(sign_in_text)
+    elif sign_success:
+        if random_exp<2:
             sign_in_text+='快跑！！经验+'+str(exp)
-        elif exp<4:
+        elif random_exp<4:
             sign_in_text+='好像不妙，经验+'+str(exp)
-        elif exp<7:
+        elif random_exp<7:
             sign_in_text+='平平淡淡，经验+'+str(exp)
-        elif exp<10:
+        elif random_exp<10:
             sign_in_text+='好运连连，经验+'+str(exp)
-        else:
+        elif random_exp==10:
             sign_in_text+='天选之人！经验+'+str(exp) 
+        else:
+            sign_in_text+='万里挑一！！经验+'+str(exp) 
         #if week == int(week):
         #    sign_in_text+='(连续签到奖励-额外+'+str(3*week)+')'
         
@@ -342,8 +371,9 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     this_height = top_img_height +height*0.05
     ImageDraw.Draw(background).text(xy=(width/4*3, this_height),
                                         text=bonus_text, font=monkey_text_font, align='center',anchor='mt',
-                                        fill=(128, 128, 128))  # bonus
+                                        fill=get_level_color(level=min(9,int(bonus*10))))  # bonus
     this_height += bonus_text_height+height*0.075
+    
     ##铜铅钛钍
     #cu
     background = add_trans_paste(background, path = os.path.join(IMAGE_PATH, 'mdt','items','item-copper.png'),
@@ -392,12 +422,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     ###末尾
     ImageDraw.Draw(background).text(xy=(int(width_edge/2), int(height-width_edge/2)),
                                         text='@小狐狸茉莉', font=ruanmeng_text_font, align='middle',anchor='lb',
-                                        fill=(255, 105, 180))  # 材料    
-    
-    #ruanmeng_text_font = ImageFont.truetype(ruanmeng_font_path, width // 20)
-    #ImageDraw.Draw(background).text(xy=(int(width_edge), int(width_edge)),
-    #                                    text='新用户系统删档测试中...将于2022年1月1日正式上线！', font=ruanmeng_text_font, align='left',anchor='lt',
-    #                                    fill=(255, 105, 180))  # 材料        
+                                        fill=(255, 105, 180))  # 材料      
     
     background = background.convert("RGB")
     saveloc = sign_pic_path+f"\\user\\{QQ}_{today}.jpg"
