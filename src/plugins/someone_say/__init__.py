@@ -28,7 +28,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
 
 ###自定义图
-someonesay = on_startswith("鲁迅说：", priority=5,block=True)
+someonesay = on_startswith("鲁迅：", priority=5,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -38,7 +38,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if check_service(event.user_id,'有人说')!=99:
         await someonesay.finish("制作图片需要铅为底，挖点再回来吧！\t(可能是没注册或是铅不够)")
         
-    says = str(event.message)[4:]
+    says = str(event.message)[3:]
     
     from PIL import Image, ImageDraw, ImageFont
     import os

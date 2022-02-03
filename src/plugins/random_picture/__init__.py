@@ -142,14 +142,14 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 ###库
 def count_figure():
     import os
-    msg_build = "特殊时期，功能已关闭，请过两天再试哦\n茉莉已收藏了以下系列的图片！\n"
+    msg_build = "发送单张图片直接输入'随机**'即可，发送大量图片请使用'图包-随机**'以减少刷屏\n"
     count_fig=0
     for pic_key in pic_dict:
         count_fig_s = len(os.listdir(os.path.join(img_path,pic_key)))
         count_fig+=count_fig_s
         msg_build+="随机"+pic_dict[pic_key][0]+f'  ({count_fig_s})'+'\n'
     msg_build+='总计 '+str(count_fig)+' 个图片'
-    msg_build+='\n如果你也给茉莉投稿图片，请发送\'投稿图片指南\'哦'
+    msg_build+='\n如果你也想给茉莉投稿图片，请发送\'投稿图片指南\'哦'
     return msg_build
 
 def send_random_picture(picture_type):
