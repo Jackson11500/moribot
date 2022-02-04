@@ -154,7 +154,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
 
         if random_exp>=10:
             if random_exp==20:
-                bonus*=2
+                bonus*=2.5
             bonus*=2
         
         if df_us.loc[QQ,'contin_signin']%5 == 0:

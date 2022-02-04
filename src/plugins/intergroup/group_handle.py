@@ -51,7 +51,7 @@ async def draw_group_status(bot: Bot, event: GroupMessageEvent, state: T_State):
                                     fill=(255, 105, 180))  # 水印   
 
     ImageDraw.Draw(background).text(xy=(width-int(width_edge/2), int(height-width_edge/2-width//40-20)),
-                                    text='共加入11个群，其中6个群隐藏。若要隐藏本群请@lc处理', font=ssmd_text_font, align='middle',anchor='rb',
+                                    text='共加入13个群，其中8个群隐藏。若要隐藏本群请@lc处理', font=ssmd_text_font, align='middle',anchor='rb',
                                     fill=(150, 150, 150))  #   
 
     ImageDraw.Draw(background).text(xy=(width-int(width_edge/2), int(height-width_edge/2)),
