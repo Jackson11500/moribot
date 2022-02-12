@@ -92,7 +92,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     from PIL import Image, ImageDraw, ImageFont
     import os
     someone_fig = Image.open(os.path.join(SOMEONE_RES_PATH,'喜报.png'))
-    font_path = os.path.abspath(os.path.join(FONT_PATH, 'msjh.ttf'))
+    font_path = os.path.abspath(os.path.join(FONT_PATH, '极字经典隶书简繁.ttf'))
     text_font = ImageFont.truetype(font_path, someone_fig.width // 12)
     
     width = int(someone_fig.width/2)
@@ -111,7 +111,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         this_height += h - 5
         last_cut = cut 
         if this_height >=int(someone_fig.height/10*9):
-            await someonesay.finish('太长了，鲁迅说不完...')
+            await someonesay.finish('奖状放不下这么多字啦...')
             await someonesay.finish() 
     ImageDraw.Draw(someone_fig).text(xy = (width, this_height),
                                     text = says[last_cut:], align='left',anchor='mb', 

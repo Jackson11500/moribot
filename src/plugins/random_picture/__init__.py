@@ -45,6 +45,7 @@ pic_dict = {
     '三色':['三色','三色绘恋'],
     '天使':['天使'],
     '白毛狐狸':['白毛狐狸','白狐'],
+    '妃爱':['妃爱','妹妹'],
     'BlueArchive':['BA','BlueArchive','ba'],
     'AA':['AA','AscixArt'],
     '9-nine':['9-nine','9nine'],

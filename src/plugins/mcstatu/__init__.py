@@ -22,11 +22,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not str(event.group_id) in ['718017633','931790051','180707407']:
         await mc_status.finish()
     
-    address = "mc2.xlhost.cn:10156"
-    server = MinecraftServer.lookup("mc2.xlhost.cn:10156")
+    server = MinecraftServer.lookup("tiger.xlhost.cn:11164")
     msg = "winecraft mc服务器"
     #msg += "查询服务器："+address
-    msg += "\n服务器延迟："+str(server.ping())+" ms"
+    msg += "\n服务器延迟："+str(int(server.ping()))+" ms"
     playercount = server.status().players.online
     if playercount ==0:
         msg += '\n'+"服务器现在没有人呢~"
