@@ -34,7 +34,7 @@ def process_code():
                     continue
                 elif '@Override' in line:
                     readindex=1
-                    with open(source_mainfolder+f'data//{file}','w') as fl:
+                    with open(source_mainfolder+f'data//{file}'.lower(),'w') as fl:
                         fl.write(filelist)
                     continue
                 elif start==1:
@@ -44,9 +44,9 @@ def process_code():
                 if len(line)>9 and line[9]!=' ' and ' = new ' in line:
                     #保存上一轮
                     if filename!='':
-                        with open(source_mainfolder+f'type//{filename}','w') as fn:
+                        with open(source_mainfolder+f'type//{filename}'.lower(),'w') as fn:
                             fn.write(filestorage)
-                        with open(source_mainfolder+f'ran//{random}','w') as fn:
+                        with open(source_mainfolder+f'ran//{random}'.lower(),'w') as fn:
                             fn.write(filestorage)
                         random+=1
                     #进行下一轮
