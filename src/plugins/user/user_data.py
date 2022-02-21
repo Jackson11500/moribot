@@ -134,6 +134,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         #是否连续签到
         if df_us.loc[QQ].signindate == today-1:
             df_us.loc[QQ,'contin_signin'] += 1
+        elif df_us.loc[QQ,'contin_signin']>=5:
+            df_us.loc[QQ,'contin_signin'] -= 4
         else:
             df_us.loc[QQ,'contin_signin'] = 1
         #设置签到

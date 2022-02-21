@@ -50,14 +50,17 @@ def getcatgirl():
                    '小曼','小新','小露','艾尔莎',
                    'anuke','臭猫'])
 
+def getfoxgirl():
+    from random import choice
+    return choice(['茉莉','kimo','yumi'])
+
 change = on_startswith("魔法",endswith("魔法"),priority=6,block=True)
 
 @change.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'chatting')==0:
         await change.finish()
-    await bot.send(event,message="这里是茉莉的魔法实验室！目前功能：\n变猫娘：@你想变的玩家\n小天才：***\n主世界重生\n更多功能正在测试中！\n\
-欢迎来一起编辑词条！词条连接：https://docs.qq.com/sheet/DVFFVbWdlalVkcHp2")
+    await bot.send(event,message="这里是茉莉的魔法实验室！目前功能：\n变猫娘：@你想变的玩家\n小天才：***\n主世界重生\n更多功能正在测试中！")
 
 change_catgirl = on_command("变猫娘",priority=5,block=True)
 
