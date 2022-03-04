@@ -38,12 +38,21 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'user')==0:
         await user_signin.finish()
     import src.plugins.user.user_data as us
-    text = await us.user_sign_in(bot=bot, event=event, state=state)
-    import os 
-    if (os.path.exists(text)):
-        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+MessageSegment.image(file = "file:///"+text))
-    else:
-        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+text)
+    saveloc,sign_in_text = await us.user_sign_in(bot=bot, event=event, state=state)
+    import os
+    msg_list = []
+    main = {
+    "type": "node",
+    "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": sign_in_text},
+    }
+    msg_list.append(main)
+    if os.path.exists(saveloc):
+        signin = {
+        "type": "node",
+        "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": MessageSegment.image(file = "file:///"+saveloc)},
+        }
+        msg_list.append(signin)
+    await bot.send_group_forward_msg(group_id=event.group_id,messages = msg_list)
     await user_signin.finish()
 
 ###注册
@@ -181,7 +190,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await bot.send(event,message='请根据正确的格式转账！示例：\n转账：12345678：cu：12\n分别填空：目标qq号，类型（cu/pd/ti/tu)，数量')
         await user_transfer_base.finish()
     
-    if modify_single_res(int(payer))==99 and modify_single_res(int(receiver))==99:
+    elif modify_single_res(int(payer))==99 and modify_single_res(int(receiver))==99:
         if modify_single_res(int(payer),level = 3, amount = -int(command[2]),res_type=type)==99:
             if modify_single_res(int(receiver),level = 3, amount = int(int(command[2])/2),res_type=type)==99:
                 await bot.send(event,message='你已成功向对面核心投掷资源！\n如果想要更高的转账效率，来尝试建造质驱或发射台吧！')

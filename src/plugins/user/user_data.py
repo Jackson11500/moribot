@@ -428,9 +428,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     
     background = background.convert("RGB")
     saveloc = sign_pic_path+f"\\user\\{QQ}_{today}.jpg"
-    background.save(saveloc, 'JPEG')
-    
-    return saveloc
+    background.save(os.path.join(USER_PATH, str(QQ),'signin_pic.jpg'), 'JPEG')
+    return saveloc,sign_in_text
 
 def combine_user_data():
     import os
