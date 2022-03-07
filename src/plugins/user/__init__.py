@@ -39,20 +39,23 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await user_signin.finish()
     import src.plugins.user.user_data as us
     saveloc,sign_in_text = await us.user_sign_in(bot=bot, event=event, state=state)
-    import os
-    msg_list = []
-    main = {
-    "type": "node",
-    "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": sign_in_text},
-    }
-    msg_list.append(main)
-    if os.path.exists(saveloc):
-        signin = {
+    if saveloc == 0:
+        await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案')
+    else:
+        import os
+        msg_list = []
+        main = {
         "type": "node",
-        "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": MessageSegment.image(file = "file:///"+saveloc)},
+        "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": sign_in_text},
         }
-        msg_list.append(signin)
-    await bot.send_group_forward_msg(group_id=event.group_id,messages = msg_list)
+        msg_list.append(main)
+        if os.path.exists(saveloc):
+            signin = {
+            "type": "node",
+            "data": {"name": f"签到姬茉莉酱~","uin": f"{bot.self_id}","content": MessageSegment.image(file = "file:///"+saveloc)},
+            }
+            msg_list.append(signin)
+        await bot.send_group_forward_msg(group_id=event.group_id,messages = msg_list)
     await user_signin.finish()
 
 ###注册
@@ -222,16 +225,3 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     msg += f'\nbonus+{int(count)//100}'
     await bot.send(event=event,message=msg)
     await user_register.finish()
-
-
-'''
-from nonebot.adapters import Message
-
-red_paper = on_command("*红包", aliases={"*发红包"}, priority=5)
-
-@red_paper.got("city")
-async def handle_city(bot: Bot, event: Event, state: T_State):
-    await weather.reject(city.template("你想查询的城市 {city} 暂不支持，请重新输入！"))
-    
-    await red_paper.finish()
-'''

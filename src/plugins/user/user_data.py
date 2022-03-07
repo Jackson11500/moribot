@@ -71,7 +71,7 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     import pandas
     import os
     if not os.path.exists(os.path.join(USER_PATH, str(QQ))):
-        return '茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案'+'\n'
+        return 0, 0
     
     df_us=pandas.read_csv(os.path.join(USER_PATH, str(QQ),'data.csv'), index_col=0)
     df_us['registertime'] = df_us['registertime'].apply(str) + '\t'
@@ -427,8 +427,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
                                         fill=(255, 105, 180))  # 材料      
     
     background = background.convert("RGB")
-    saveloc = sign_pic_path+f"\\user\\{QQ}_{today}.jpg"
-    background.save(os.path.join(USER_PATH, str(QQ),'signin_pic.jpg'), 'JPEG')
+    saveloc = os.path.join(USER_PATH, str(QQ),'signin_pic.jpg')
+    background.save(saveloc, 'JPEG')
     return saveloc,sign_in_text
 
 def combine_user_data():
