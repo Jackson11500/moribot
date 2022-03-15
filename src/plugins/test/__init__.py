@@ -42,7 +42,7 @@ def At(data: str):
     except KeyError:
         return ['null']
 
-moritest = on_command("测试",permission=SUPERUSER,priority=1,block=True)
+moritest = on_command("测试",permission=SUPERUSER,priority=999,block=True)
 
 @moritest.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -64,7 +64,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await moritest.finish()
     '''
 
-moritest = on_command("",rule = to_me(),priority=1,block=True)
+moritest = on_command("",rule = to_me(),priority=999,block=True)
 
 @moritest.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):

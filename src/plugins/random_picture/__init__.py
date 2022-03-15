@@ -29,15 +29,14 @@ pic_dict = {
     '燐猫':['工业2','mi2','燐猫','火焰猫燐'],
     '乃爱':['carrot','萝卜','乃爱'],
     '大猫':['大猫'],
-    '小岛游':['小岛游','小屑猫','六花','小岛游六花'],
+    '小鸟游':['小岛游','小屑猫','六花','小鸟游六花'],
     '小恶魔':['小恶魔','小emo'],
     '小伞':['小伞','多多良小伞','多多良小鼬'],
     '水月':['水月','天幻'],
     '透明药':['透明药','chitose','klp'],
-
-    '二次元':['二次元','二刺螈','妹子'],
-    '壁纸':['壁纸','琉璃'],
-    'xp':['xp'],
+    'furry':['furry','福瑞','法仆塔'],
+    '西瓜':['西瓜','yaddr','yaddrx2','有案底的人'],
+    '石油':['石油'],
     
     'capoo':['capoo','咖波'],
     '秘封':['秘封'],
@@ -49,9 +48,11 @@ pic_dict = {
     'BlueArchive':['BA','BlueArchive','ba'],
     'AA':['AA','AscixArt'],
     '9-nine':['9-nine','9nine'],
-    '石油':['石油'],
-    
-    '群星':['科幻','stellaris','群星']
+    '群星':['科幻','stellaris','群星'],
+
+    '二次元':['二次元','二刺螈','妹子'],
+    '壁纸':['壁纸','琉璃'],
+    'xp':['xp']
 }
 
 ###随机图片
@@ -123,7 +124,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
                 msg_list.append(main)
             await bot.send_group_forward_msg(group_id=event.group_id,messages = msg_list)
             await randomfig.finish()
-    await randomfig.finish("？")
+    await randomfig.finish(f"茉莉没有收藏{pic_type}的图片，可以加茉莉的画展群提交图包！[873413448]")
 
 ###投稿指南
 figintro = on_command("投稿图片指南", priority=3,block=True)
@@ -133,8 +134,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'random_pic')==0:
         await randomfig.finish()
     msg = '你也想投稿图片吗？非常欢迎哦~\n\
-· 如果你想添加3张及以下的图片，直接加茉莉好友然后私发给茉莉就行啦！\n\
-· 但如果想一次添加3张以上的大量图片，请先自行打包成压缩包，随后直接发给lc，或者发到群里@lc或是茉莉都行！\n\
+· 如果是少量3张以内的图片，直接@lc即可哦(什么？lc是谁？那可能说明她不希望在这个群接受少量图片的投稿哦)\n\
+· 但如果想一次添加3张以上的大量图片，请先自行打包成压缩包，直接发给lc，或者加入茉莉的画展群[873413448]提交图片哦！\n\
 · 发送图片或梗图记得简单补充个图片说明，例如希望在什么对话下触发之类的，茉莉能明白的~\n\
 · 还有还有，不要教茉莉坏坏的内容！例如涩图，脏话，哲学恶臭图等，如有发现茉莉会惩罚积分哦~毕竟大家也不会希望茉莉被气走吧~一定是这样的！\n\
 · 不管怎么说，所有图片都需要经过主人审核才会加入茉莉的图包。所以....就不要想着萌混过关啦~~~'
