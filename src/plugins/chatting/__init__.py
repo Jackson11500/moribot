@@ -170,7 +170,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await chat.finish()
         
     from random import choice
-    await bot.send(event=event,message=MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,"找笨蛋.jpg")))
+    await bot.send(event=event,message=MessageSegment.image("file:///"+os.path.join(RIMAGE_PATH,choice(["找笨蛋.jpg","小笨蛋.jpg"]))))
     await chat.finish()
 
 ##

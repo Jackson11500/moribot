@@ -132,10 +132,13 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
     else:
         ##! 签到
         #是否连续签到
+        is_con_signin = 0
         if df_us.loc[QQ].signindate == today-1:
             df_us.loc[QQ,'contin_signin'] += 1
+            is_con_signin = 1
         elif df_us.loc[QQ,'contin_signin']>=5:
             df_us.loc[QQ,'contin_signin'] -= 4
+            is_con_signin = -1
         else:
             df_us.loc[QQ,'contin_signin'] = 1
         #设置签到
@@ -284,6 +287,8 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         #    sign_in_text+='(连续签到奖励-额外+'+str(3*week)+')'
         
         sign_in_text+='\n已连续签到'+str(int(df_us.loc[QQ].contin_signin))+'天'
+        if is_con_signin==-1:
+            sign_in_text+='\n断签惩罚：连续签到-4天'
         sign_in_text_width, sign_in_text_height = bd_text_font.getsize(sign_in_text)    
     else:
         sign_in_text+='今日已签到，经验+'+str(exp)
