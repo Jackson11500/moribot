@@ -26,43 +26,28 @@ def process_code():
         filestorage=''  #初始化filestorage
         start=0
         for line in f.readlines():
-            #读取list
-            if readindex==0:
-                if f'public class {file}' in line:
-                    filelist+=line+'\n'
-                    start=1
-                    continue
-                elif '@Override' in line:
-                    readindex=1
-                    with open(source_mainfolder+f'data//{file}'.lower(),'w') as fl:
-                        fl.write(filelist)
-                    continue
-                elif start==1:
-                    filelist+=line+'\n'
-            #读取type
-            elif readindex==1:
-                if len(line)>9 and line[9]!=' ' and ' = new ' in line:
-                    #保存上一轮
-                    if filename!='':
-                        with open(source_mainfolder+f'type//{filename}'.lower(),'w') as fn:
-                            fn.write(filestorage)
-                        with open(source_mainfolder+f'ran//{random}'.lower(),'w') as fn:
-                            fn.write(filestorage)
-                        random+=1
-                    #进行下一轮
-                    filestorage=''
-                    filename=line.find('=')
-                    filename=line[8:filename-1]
-                    filestorage+=line+'\n'
-                elif line.startswith('}'):
-                    #保存上一轮
+            if len(line)>9 and line[9]!=' ' and ' = new ' in line:
+                #保存上一轮
+                if filename!='':
                     with open(source_mainfolder+f'type//{filename}'.lower(),'w') as fn:
                         fn.write(filestorage)
                     with open(source_mainfolder+f'ran//{random}'.lower(),'w') as fn:
                         fn.write(filestorage)
-                    break                
-                else:
-                    filestorage+=line+'\n'
+                    random+=1
+                #进行下一轮
+                filestorage=''
+                filename=line.find('=')
+                filename=line[8:filename-1]
+                filestorage+=line+'\n'
+            elif line.startswith('}'):
+                #保存上一轮
+                with open(source_mainfolder+f'type//{filename}'.lower(),'w') as fn:
+                    fn.write(filestorage)
+                with open(source_mainfolder+f'ran//{random}'.lower(),'w') as fn:
+                    fn.write(filestorage)
+                break                
+            else:
+                filestorage+=line+'\n'
                     
 def ran_ques():
     """

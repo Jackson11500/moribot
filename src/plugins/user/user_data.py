@@ -136,11 +136,15 @@ async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Un
         if df_us.loc[QQ].signindate == today-1:
             df_us.loc[QQ,'contin_signin'] += 1
             is_con_signin = 1
+        
+        is_con_signin = 1
+        ''' #暂时跳过签到失败
         elif df_us.loc[QQ,'contin_signin']>=5:
             df_us.loc[QQ,'contin_signin'] -= 4
             is_con_signin = -1
         else:
             df_us.loc[QQ,'contin_signin'] = 1
+        '''
         #设置签到
         df_us.loc[QQ,'signindate'] = today
         #7日签到
