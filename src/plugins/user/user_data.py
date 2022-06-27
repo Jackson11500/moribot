@@ -4,7 +4,7 @@ columns=['registertime','exp','level','signin','signinexp','signindate','contin_
 from configs.path_config import PLUGINS_PATH, USER_PATH,IMAGE_PATH,FONT_PATH,MAIN_PATH
 import os
 THIS_PATH = os.path.join(PLUGINS_PATH,'user')
-from configs.global_vars import all_unit_types
+from utils.unitTypes import all_unit_types
 
 def register(QQ):
     import os

@@ -1,5 +1,13 @@
 import numpy as np
 
+class unittype:
+    def __init__(self,name,tier):
+        self.name = name
+        self.tier = tier
+        
+    
+        
+
 UNIT_PRO =  [['dagger','mace','fortress','scepter','reign'],
             ['nova','pulsar','quasar','vela','corvus'],
             ['crawler','atrax','spiroct','arkyid','toxopid'],
@@ -15,7 +23,9 @@ UNIT_CORE = [['alpha', 'beta', 'gamma'],
             ['evoke', 'incite', 'emanate']]
 
 UNIT_PRO_NP = np.array(UNIT_PRO)          
-UNIT_CORE_NP = np.array(UNIT_CORE)       
+UNIT_CORE_NP = np.array(UNIT_CORE)
+
+a = unittype()       
 
 def unit_types(array, i, type_first: bool):
     '''
