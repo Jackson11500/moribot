@@ -66,20 +66,23 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         await game.finish()
 
 ##24
-game = on_regex("^24点$", priority=5,block=True)
+game = on_regex("^24点", priority=5,block=True)
 
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'little_game')==0:
         await game.finish()
     import random,os
-    text = '随机24点：\n规则:每个数字只能且必须使用1次，只能使用+-*/及括号，并使最后结果等于24\n下列组合茉莉已经研究过并确定有解的！答不出说明你是小笨蛋\n'
-    text += random.choice(open(os.path.join(PLUGINS_PATH,'little_game','24点.txt')).readlines())
-    await bot.send(event=event,message=text)
+    from src.plugins.little_game.card_generator import gen_math24_game
+    ques = 0
+    if len(str(event.message))>3 and str(event.message)[3] == "：" and str(event.message)[4:].isdigit():
+        ques = min(int(str(event.message)[4:]),1361)
+    else:
+        ques = random.randint(0,1361)
+    gen_math24_game(ques)
+    msg = f"茉莉已找到24点题库：{ques}/1362，来试试吧！"+MessageSegment.image(file = "file:///"+os.path.join(PLUGINS_PATH,'little_game','math24.jpg'))
+    await bot.send(event=event,message=msg)
     await game.finish()
-
-##24
-
 
 game = on_regex("测试",permission=SUPERUSER, priority=1,block=True)
 

@@ -38,8 +38,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'user')==0:
         await user_signin.finish()
     import src.plugins.user.user_data as us
-    #await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'茉莉正在调试新功能！请等一下再来哦~')
-    #await user_signin.finish()
+    await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'茉莉正在调试新功能！请等一下再来哦~')
+    await user_signin.finish()
     saveloc,sign_in_text = await us.user_sign_in(bot=bot, event=event, state=state)
     if saveloc == 0:
         await bot.send(event=event,message=MessageSegment.reply(event.message_id)+'茉莉这里还没你的档案呢，要先注册才行哦。输入\'注册\'即可注册茉莉档案')
@@ -74,19 +74,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     else:
         msg = MessageSegment.reply(event.message_id)+f"注册成功！你是第{par}位成为茉莉朋友的人！"
     await bot.send(event=event,message=msg)
-    await user_register.finish()
-
-###注册
-user_register = on_command("排行榜刷新",rule=endswith("排行榜刷新"), priority=5,block=True)
-
-@user_register.handle()
-async def handle_first_receive(bot: Bot, event: Event, state: T_State):
-    if checkallow(event,'user')==0:
-        await user_register.finish()
-    import src.plugins.user.user_data as us
-    us.combine_user_data()
-    us.ranking_list()
-    await bot.send(event=event,message="排行榜自动刷新，此命令废弃")
     await user_register.finish()
 
 ###注册
