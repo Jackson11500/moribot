@@ -1,11 +1,6 @@
-# import nonebot
+from nonebot import get_driver
 
-
-from nonebot import get_driver, permission
-
-
-from nonebot import on_regex,on_command,on_notice,on_message
-from nonebot.rule import to_me,startswith
+from nonebot import on_regex
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
@@ -15,7 +10,7 @@ from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import checkallow
 
 global_config = get_driver().config
-from configs.path_config import PLUGINS_PATH
+from configs.path_config import *
 
 ##游戏
 game = on_regex("^游戏$|^小游戏$", priority=5,block=True)
@@ -81,4 +76,17 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     text = '随机24点：\n规则:每个数字只能且必须使用1次，只能使用+-*/及括号，并使最后结果等于24\n下列组合茉莉已经研究过并确定有解的！答不出说明你是小笨蛋\n'
     text += random.choice(open(os.path.join(PLUGINS_PATH,'little_game','24点.txt')).readlines())
     await bot.send(event=event,message=text)
+    await game.finish()
+
+##24
+
+
+game = on_regex("测试",permission=SUPERUSER, priority=1,block=True)
+
+@game.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'little_game')==0:
+        await game.finish()
+    from src.plugins.little_game.card_generator import gen_all_card
+    gen_all_card()
     await game.finish()

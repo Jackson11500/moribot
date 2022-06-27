@@ -2,6 +2,7 @@ import numpy as np
 from configs.path_config import IMAGE_PATH
 import os
 
+'''
 class unittype:
     def __init__(self,name:int,type:int,tier:int):
         self.name = name
@@ -10,6 +11,7 @@ class unittype:
     
     def ui_image_path(self):
         return os.path.join(IMAGE_PATH,'mdt','ui','unit-'+self.name+'-ui.png')
+'''
     
 UNIT_CORE = [['alpha', 'beta', 'gamma'],
             ['evoke', 'incite', 'emanate']]
@@ -53,8 +55,11 @@ def all_unit_types(i: int, type_first: bool) -> str:
     else:
         return unit_types(UNIT_PRO_NP,i-UNIT_CORE_NP.size,type_first)
     
-def ui_image_path(unit:str ) -> str:
-    return os.path.join(IMAGE_PATH,'mdt','ui','unit-'+unit+'-ui.png')
+def ui_image_path_unit(unit:str) -> str:
+    return ui_image_path('unit',unit)
+
+def ui_image_path(type:str,unit:str) ->str:
+    return os.path.join(IMAGE_PATH,'mdt','ui',f'{type}-{unit}-ui.png')
 
 def all_unit_image(i: int, type_first: bool) -> str:
-    return ui_image_path(all_unit_types(i,type_first))
+    return ui_image_path_unit(all_unit_types(i,type_first))
