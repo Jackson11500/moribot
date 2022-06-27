@@ -4,6 +4,7 @@ columns=['registertime','exp','level','signin','signinexp','signindate','contin_
 from configs.path_config import PLUGINS_PATH, USER_PATH,IMAGE_PATH,FONT_PATH,MAIN_PATH
 import os
 THIS_PATH = os.path.join(PLUGINS_PATH,'user')
+from configs.global_vars import all_unit_types
 
 def register(QQ):
     import os
@@ -50,18 +51,11 @@ def get_level_color(level: int):
     }
     return level_color.get(level, (136, 136, 136))
 
-def return_level_icon_path(level:int): 
+def return_level_icon_path(level:int)->str: 
     '''
     返回等级图标所在的文件夹，但这一文件不一定存在
     '''
-    unittype = ['','alpha','beta','gamma',
-                'dagger','crawler','nova','flare','mono','risso','retusa',
-                'mace','atrax','pulsar','horizon','poly','minke','oxynoe',
-                'fortress','spiroct','quasar','zenith','mega','bryde','cyerce',
-                'scepter','arkyid','vela','antumbra','quad','sei','aegires',
-                'reign','toxopid','corvus','eclipse','oct','omura','navanax',
-                ]
-    return 'D://QQ//Bot//nonebot//moribot//resources//img//mdt//unit//unit-'+unittype[int(level)]+'-full.png'
+    return os.path.join(IMAGE_PATH,'mdt','ui','unit-'+all_unit_types(level,type_first=False)+'-ui.png')
 
 async def user_sign_in(bot: Bot, event: GroupMessageEvent, state: T_State) -> Union[Message, MessageSegment, str]:
     '''
