@@ -1,12 +1,18 @@
 import numpy as np
+from configs.path_config import IMAGE_PATH
+import os
 
 class unittype:
-    def __init__(self,name,tier):
+    def __init__(self,name:int,type:int,tier:int):
         self.name = name
+        self.type = type
         self.tier = tier
-        
     
-        
+    def ui_image_path(self):
+        return os.path.join(IMAGE_PATH,'mdt','ui','unit-'+self.name+'-ui.png')
+    
+UNIT_CORE = [['alpha', 'beta', 'gamma'],
+            ['evoke', 'incite', 'emanate']]
 
 UNIT_PRO =  [['dagger','mace','fortress','scepter','reign'],
             ['nova','pulsar','quasar','vela','corvus'],
@@ -18,14 +24,9 @@ UNIT_PRO =  [['dagger','mace','fortress','scepter','reign'],
             ['stell','locus','precept','vanquish','conquer'],
             ['merui','cleroi','anthicus','tecta','collaris'],
             ['elude','avert','obviate','quell','disrupt']]
-      
-UNIT_CORE = [['alpha', 'beta', 'gamma'],
-            ['evoke', 'incite', 'emanate']]
 
 UNIT_PRO_NP = np.array(UNIT_PRO)          
-UNIT_CORE_NP = np.array(UNIT_CORE)
-
-a = unittype()       
+UNIT_CORE_NP = np.array(UNIT_CORE)     
 
 def unit_types(array, i, type_first: bool):
     '''
@@ -51,3 +52,9 @@ def all_unit_types(i: int, type_first: bool) -> str:
         return unit_types(UNIT_CORE_NP,i,type_first)
     else:
         return unit_types(UNIT_PRO_NP,i-UNIT_CORE_NP.size,type_first)
+    
+def ui_image_path(unit:str ) -> str:
+    return os.path.join(IMAGE_PATH,'mdt','ui','unit-'+unit+'-ui.png')
+
+def all_unit_image(i: int, type_first: bool) -> str:
+    return ui_image_path(all_unit_types(i,type_first))
