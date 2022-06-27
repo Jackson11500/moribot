@@ -18,7 +18,7 @@ import os
 SOMEONE_RES_PATH = os.path.join(PLUGINS_PATH,'someone_say','resources')
 
 ###自定义图
-someonesay = on_startswith("有人说",rule = endswith("有人说"), priority=3,block=True)
+someonesay = on_startswith("有人说",rule = endswith("有人说"), priority=10,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -28,7 +28,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     
 
 ###自定义图
-someonesay = on_startswith("鲁迅：", priority=5,block=True)
+someonesay = on_startswith("鲁迅：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -77,7 +77,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()    
       
 ###自定义图
-someonesay = on_startswith("喜报：", priority=5,block=True)
+someonesay = on_startswith("喜报：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -123,7 +123,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()    
       
 ###自定义图
-someonesay = on_startswith("年号：", priority=5,block=True)
+someonesay = on_startswith("年号：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -156,7 +156,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()    
       
 ###自定义图
-someonesay = on_startswith("宁宁：", priority=5,block=True)
+someonesay = on_startswith("宁宁：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -186,7 +186,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()
       
 ###自定义图
-someonesay = on_startswith("千代：", priority=5,block=True)
+someonesay = on_startswith("千代：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -215,7 +215,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=MessageSegment.image(file = "file:///"+os.path.join(SOMEONE_RES_PATH,'ls_fig.jpg')))
     await someonesay.finish()
         
-someonesay = on_startswith("nobeta：", priority=5,block=True)
+someonesay = on_startswith("nobeta：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -245,7 +245,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()   
         
 ###自定义图
-someonesay = on_startswith("猫娘：", priority=5,block=True)
+someonesay = on_startswith("猫娘：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -273,7 +273,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         
         
 ###自定义图
-someonesay = on_startswith("气晕：", priority=5,block=True)
+someonesay = on_startswith("气晕：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -300,7 +300,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await someonesay.finish()   
         
 ###自定义图
-someonesay = on_startswith("小本本：", priority=5,block=True)
+someonesay = on_startswith("小本本：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
@@ -330,7 +330,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
         
         
 ###自定义图
-someonesay = on_startswith("追杀：", priority=5,block=True)
+someonesay = on_startswith("追杀：", priority=11,block=True)
 @someonesay.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'someone_say')==0:
