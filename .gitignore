@@ -17,6 +17,7 @@ resources
 time
 data
 ls_*
+*.jpg
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
