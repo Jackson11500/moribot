@@ -22,7 +22,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if not str(event.group_id) in ['718017633','931790051','180707407']:
         await mc_status.finish()
     
-    server = MinecraftServer.lookup("cow.xlhost.cn:10912")
+    server = MinecraftServer.lookup("mega.mcla.fun:22544")
     msg = "winecraft mc服务器"
     #msg += "查询服务器："+address
     msg += "\n服务器延迟："+str(int(server.ping()))+" ms"
