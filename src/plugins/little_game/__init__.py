@@ -14,7 +14,7 @@ global_config = get_driver().config
 from configs.path_config import *
 
 ##游戏
-game = on_regex("^游戏$|^小游戏$", priority=10,block=True)
+game = on_regex("^游戏$|^小游戏$", priority=10)
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'little_game')==0:
@@ -23,7 +23,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await game.finish()
 
 ##色子
-game = on_regex("(^色子$)|(^骰子$)", priority=10,block=True)
+game = on_regex("(^色子$)|(^骰子$)", priority=10)
 
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
@@ -36,7 +36,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     await game.finish()
 
 ##色子
-game = on_regex("(^色子：)|(^骰子：)", priority=10,block=True)
+game = on_regex("(^色子：)|(^骰子：)", priority=10)
 
 @game.handle()
 async def _(bot: Bot, event: Event, state: T_State):
@@ -67,7 +67,7 @@ async def _(bot: Bot, event: Event, state: T_State):
         await game.finish()
 
 ##24
-game = on_regex("^24点", priority=10,block=True)
+game = on_regex("^24点", priority=10)
 
 @game.handle()
 async def _(bot: Bot, event: Event, state: T_State):
@@ -85,7 +85,7 @@ async def _(bot: Bot, event: Event, state: T_State):
     await bot.send(event=event,message=msg)
     await game.finish()
 
-game = on_regex("测试", priority=1,block=True)
+game = on_regex("测试", priority=1)
 
 @game.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
