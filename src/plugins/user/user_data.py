@@ -24,11 +24,11 @@ def backup():
     shutil.copytree(USER_PATH, os.path.join(MAIN_PATH, 'data','databackup',f'{localtime.tm_mon}_{localtime.tm_mday}_{localtime.tm_hour}'))
     return '文件已备份'
 
-from nonebot.adapters.cqhttp.bot import Bot
+from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.typing import T_State
-from nonebot.adapters.cqhttp.event import GroupMessageEvent
+from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from typing import Union
-from nonebot.adapters.cqhttp.message import Message, MessageSegment
+from nonebot.adapters.onebot.v11.message import Message, MessageSegment
 
 def req_exp(level):
     return int(3*level*(level+1)/2)

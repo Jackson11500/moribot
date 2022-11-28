@@ -1,11 +1,11 @@
-from nonebot.adapters.cqhttp.permission import GROUP
+from nonebot.adapters.onebot.v11.permission import GROUP
 from nonebot import get_driver
 
 from nonebot import on_regex
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageSegment
 
 from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import checkallow

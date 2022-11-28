@@ -2,7 +2,7 @@ from datetime import datetime
 from collections import defaultdict
 from nonebot import require
 from typing import List, Union, Optional, Type, Any
-from nonebot.adapters.cqhttp import Bot
+from nonebot.adapters.onebot.v11 import Bot
 from nonebot.matcher import matchers, Matcher
 import httpx
 import nonebot

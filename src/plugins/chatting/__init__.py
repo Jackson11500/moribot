@@ -7,9 +7,9 @@ from nonebot import on_regex,on_command,on_notice,on_message
 from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
-from nonebot.adapters.cqhttp import PRIVATE,PRIVATE_FRIEND
+from nonebot.adapters.onebot.v11 import PRIVATE,PRIVATE_FRIEND
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment,PokeNotifyEvent,GroupMessageEvent
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageSegment,PokeNotifyEvent,GroupMessageEvent
 
 global_config = get_driver().config
 config = Config(**global_config.dict())
@@ -23,7 +23,7 @@ THIS_PATH = os.path.join(PLUGINS_PATH,'chatting')
 ##参数
 chat_priority = 10
 ##戳一戳
-async def _poke_me(bot: Bot, event: Event, state: dict):
+async def _poke_me(bot: Bot, event: Event):
     return event.notice_type == 'notify' and event.sub_type == 'poke' and str(event.target_id) == bot.self_id
 
 pokeme = on_notice(_poke_me, priority=chat_priority,block=True)

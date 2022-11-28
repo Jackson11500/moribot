@@ -1,11 +1,11 @@
-from nonebot.adapters.cqhttp.permission import GROUP
+from nonebot.adapters.onebot.v11.permission import GROUP
 #from utils.image_utils import get_img_hash
 import random
 #from utils.message_builder import image
 from nonebot import on_message
 from utils.utils import get_message_text, get_message_imgs
 from nonebot.typing import T_State
-from nonebot.adapters.cqhttp import Bot, GroupMessageEvent
+from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent
 #from utils.http_utils import AsyncHttpx
 #from utils.manager import group_manager
 

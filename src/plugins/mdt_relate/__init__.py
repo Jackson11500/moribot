@@ -8,7 +8,7 @@ from nonebot.rule import to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageSegment
 
 global_config = get_driver().config
 

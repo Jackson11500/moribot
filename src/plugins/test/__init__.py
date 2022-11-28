@@ -10,7 +10,7 @@ from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 from nonebot.permission import SUPERUSER
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment,PrivateMessageEvent
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageEvent,MessageSegment,PrivateMessageEvent
 ###
 #moritest = on_startswith("测试", priority=3, permission=SUPERUSER,block=True)
 async def _poke_me(bot: Bot, event: Event, state: dict):

@@ -31,7 +31,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
 输入'群组服务'以查看模式，管理或群主可输入'群组状态设置'来进行调整！"
     await morisama.finish(text)
     
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageSegment
 ###
 morisama = on_command("茉莉的命令大全", priority=5,block=True)
 

@@ -10,7 +10,7 @@ from nonebot.rule import endswith, to_me,startswith
 from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment,GroupMessageEvent
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageSegment,GroupMessageEvent
 
 from nonebot.permission import SUPERUSER
 from src.plugins.__toolbox import checkallow
@@ -18,7 +18,7 @@ from src.plugins.__toolbox import checkallow
 global_config = get_driver().config
 from configs.path_config import PLUGINS_PATH
 
-from nonebot.adapters.cqhttp import GROUP_ADMIN, GROUP_OWNER
+from nonebot.adapters.onebot.v11 import GROUP_ADMIN, GROUP_OWNER
 
 game = on_command("群组服务",priority=5,block=True)
 @game.handle()

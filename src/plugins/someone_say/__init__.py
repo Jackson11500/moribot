@@ -8,7 +8,7 @@ from nonebot.typing import T_State
 from nonebot.adapters import Bot, Event
 from nonebot.permission import SUPERUSER
 
-from nonebot.adapters.cqhttp import Bot,Event,MessageEvent,MessageSegment
+from nonebot.adapters.onebot.v11 import Bot,Event,MessageEvent,MessageSegment
 
 from src.plugins.__toolbox import checkallow
 

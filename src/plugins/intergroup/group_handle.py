@@ -1,8 +1,8 @@
-from nonebot.adapters.cqhttp.bot import Bot
+from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.typing import T_State
-from nonebot.adapters.cqhttp.event import GroupMessageEvent
+from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from typing import Union
-from nonebot.adapters.cqhttp.message import Message, MessageSegment
+from nonebot.adapters.onebot.v11.message import Message, MessageSegment
 
 from configs.path_config import FONT_PATH,PLUGINS_PATH
 import os
