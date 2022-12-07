@@ -98,3 +98,14 @@ async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     msg = choice([MessageSegment.image(img_path+"mdt滚.png")])
     await bot.send(event=event,message=msg)
     await chat.finish()
+    
+##
+from src.plugins.mdt_relate.server_list import get_server_msg
+
+chat = on_command("服务器列表",priority=mdt_priority,block=True)
+@chat.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: T_State):
+    if checkallow(event,'mdt')==0:
+        await chat.finish()
+    await bot.send_group_forward_msg(group_id=event.group_id, messages = get_server_msg(bot,event))
+    await chat.finish()

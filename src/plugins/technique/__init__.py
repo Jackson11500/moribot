@@ -137,7 +137,7 @@ source_code = on_command("源码：",aliases={"source=","源码:","source ="},pr
 async def handle_first_receive(bot: Bot, event: Event, state: T_State):
     if checkallow(event,'technique')==0:
         await source_code.finish()
-    source_file =  str(event.get_message()).lower()
+    source_file =  str(event.get_message()).lower()[3:]
     import os
     if os.path.exists(img_path+"type//"+source_file):
         await bot.send_group_forward_msg(group_id=event.group_id,messages = get_forward_msg(bot,event,source_file))
