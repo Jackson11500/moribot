@@ -45,6 +45,23 @@ def get_server_msg(bot,event):
     for s in range(len(server)):
         if server.loc[s,'players'] == 0: 
             break
+        
+        startindex = -1
+        index = -1
+        while (index < len(server.loc[s,'name']) - 1):
+            index += 1
+            if server.loc[s,'name'][index] == '[':
+                startindex = index 
+            elif server.loc[s,'name'][index] == ']' and startindex!=-1:
+                new_str = ""
+                for j in range(len(server.loc[s,'name'])):
+                    if j >= startindex and j <= index:
+                        continue
+                    new_str += server.loc[s,'name'][j]
+                    
+                server.loc[s,'name'] = new_str
+                startindex = -1 
+                index = -1
             
         count += 1
         data = {

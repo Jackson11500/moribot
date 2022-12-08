@@ -49,7 +49,7 @@ def all_unit_types(i: int, type_first: bool) -> str:
     type_first = false:先排等级再排兵种
     '''
     if i<0 or i>UNIT_CORE_NP.size + UNIT_PRO_NP.size:
-        raise ValueError("unit types>0")
+        i = UNIT_CORE_NP.size + UNIT_PRO_NP.size
     if i<UNIT_CORE_NP.size:
         return unit_types(UNIT_CORE_NP,i,type_first)
     else:
