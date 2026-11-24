@@ -7,7 +7,7 @@ description: 在 moribot 仓库部署、恢复或排查 OpenQQ、LLBot 与 NoneB
 
 接手任务时先读[部署与排障记录](references/deployment.md)。从仓库根目录执行其中的 PowerShell 命令。先查本机状态和已有运行目录，再决定是否需要安装。
 
-这个实例只接收事件。使用 `receive_only/receiver.py`，保留签名校验、空 204 响应以及全局 OneBot API 禁用。旧的 Docker Compose 和 `src/plugins` 属于原机器人。签到、复读、定时任务、好友或入群请求处理均不属于此入口。
+使用 `receive_only/receiver.py` 接收签名事件。默认返回空 204；可按私有配置为一名用户的好友私聊和该用户在一个测试群内的精确口令 `茉莉酱` 返回固定文字。OpenQQ 通过原 HTTP 上报的响应执行这项快速回复。其他事件保持空 204，全局通用 API 调用保持禁用。旧的 Docker Compose 和 `src/plugins` 属于原机器人。签到、复读、定时任务、好友或入群请求处理均不属于此入口。
 
 验证改动时运行 `receive_only/check_offline.py`。实机验收用上报心跳和自然到达的消息，避免向任何会话发送测试消息。授权、扫码由用户在本机完成。分享状态只需计数和时间，凭证、登录二维码及聊天正文留在运行环境。
 
