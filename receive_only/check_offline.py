@@ -1,7 +1,9 @@
 """Exercise the real HTTP receiver on a temporary port without starting LLBot."""
 
+import base64
 import hashlib
 import hmac
+from io import BytesIO
 import json
 from pathlib import Path
 import secrets
@@ -12,6 +14,9 @@ import tempfile
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
+
+from PIL import Image, ImageChops
+from legacy_commands import ASSETS, GREETING, MISSING, PUZZLES
 
 
 def check(greeting_enabled=False):
@@ -56,8 +61,8 @@ def check(greeting_enabled=False):
                 "time": int(time.time()), "self_id": 10000, "post_type": "message",
                 "message_type": "group", "sub_type": "normal", "group_id": 20000,
                 "message_id": 1, "user_id": 30000, "sender": {"user_id": 30000},
-                "message": [{"type": "text", "data": {"text": "签到"}}],
-                "raw_message": "签到", "font": 0,
+                "message": [{"type": "text", "data": {"text": "普通消息"}}],
+                "raw_message": "普通消息", "font": 0,
             }
             body = json.dumps(event).encode()
             request = Request(base + "/onebot/v11/http", data=body, headers={
@@ -101,9 +106,10 @@ def check(greeting_enabled=False):
                 with reply:
                     assert reply.status == expected_code, (reply.status, expected_code)
                     if reply.status == 200:
-                        assert json.load(reply) == {
-                            "reply": "主人找我有什么事呢？", "at_sender": False, "auto_escape": True,
-                        }
+                        operation = json.load(reply)
+                        assert set(operation) == {"reply", "at_sender", "auto_escape"}
+                        assert operation["at_sender"] is False and operation["auto_escape"] is True
+                        return operation["reply"]
                     elif reply.status == 204:
                         assert reply.read() == b""
 
@@ -118,18 +124,69 @@ def check(greeting_enabled=False):
                 dict(group, sub_type="anonymous"),
                 dict(private, sub_type="group"),
                 dict(group, message=[{"type": "at", "data": {"qq": "10000"}}, *group["message"]]),
-                dict(private, message="茉莉酱！"),
+                dict(private, message="茉莉酱！！"),
                 dict(private, post_type="message_sent"),
             ):
                 post(denied)
             post(group, header_id="10001")
             for allowed in (private, group):
-                post(allowed, 200 if greeting_enabled else 204)
+                reply = post(allowed, 200 if greeting_enabled else 204)
+                assert reply == (GREETING if greeting_enabled else None)
                 post(allowed)  # The same event must never request two replies.
+
+            serial = 10
+            def command(event, text, accepted=True):
+                nonlocal serial
+                serial += 1
+                payload = dict(event, message_id=serial, raw_message=text,
+                               message=[{"type": "text", "data": {"text": text}}])
+                result = post(payload, 200 if accepted and greeting_enabled else 204)
+                post(payload)
+                return result
+
+            for text in ("24点", "鲁迅说：测试", "颜色大全", "签到"):
+                command(private, text, False)
+                command(dict(group, group_id=20001), text, False)
+                command(dict(group, user_id=30001, sender={"user_id": 30001}), text, False)
+            for text in ("传信：目标：测试", "群组状态设置：chatting：1", "数据备份",
+                         "签到了吗", "随机../../", "源码：../", "提到了小游戏"):
+                command(group, text, False)
+
+            replies = {text: command(group, text) for text in (
+                "茉莉酱！", "游戏", "骰子：6", "色子：-3", "骰子：", "骰子：1",
+                "24点", "实用资料", "蓝图档案馆", "贴贴茉莉", "有人说",
+                "茉莉的命令大全", "鲁迅说：早上好", "鲁迅:第二张", "鲁迅：",
+                "年号：新春", "签到", "随机茉莉", "24点：1", "源码：mono", "颜色大全",
+            )}
+            private_menu = command(private, "茉莉酱!")
+            if greeting_enabled:
+                assert private_menu == replies["茉莉酱！"] and "测试群" in private_menu
+                assert "骰子" in replies["游戏"] and "颜色列表" in replies["实用资料"]
+                assert "https://docs.qq.com/" in replies["蓝图档案馆"]
+                assert 1 <= int(replies["骰子：6"].split("丢出了一个")[1]) <= 6
+                assert -3 <= int(replies["色子：-3"].split("丢出了一个")[1]) <= 0
+                assert "整数" in replies["骰子："] and "硬币" in replies["骰子：1"]
+                assert replies["24点"].splitlines()[-1] in PUZZLES.read_text().splitlines()
+                assert "早上好" in replies["鲁迅："]
+                for text in ("年号：新春", "签到", "随机茉莉", "24点：1", "源码：mono"):
+                    assert replies[text] == MISSING
+                def get_image(text):
+                    segment = replies[text][-1]
+                    assert segment["type"] == "image"
+                    file = segment["data"]["file"]
+                    assert file.startswith("base64://")
+                    return base64.b64decode(file[9:], validate=True)
+                assert get_image("茉莉的命令大全") == (ASSETS / "legacy-help.png").read_bytes()
+                with Image.open(BytesIO(get_image("鲁迅说：早上好"))) as first, \
+                     Image.open(BytesIO(get_image("鲁迅:第二张"))) as second:
+                    assert first.format == "JPEG" and first.size == (480, 480)
+                    diff = ImageChops.difference(first, second)
+                    assert diff.getbbox() and diff.getbbox()[1] > first.height // 2
             final = status()
             assert final["greeting_enabled"] is greeting_enabled
             assert final["greeting_responses"] == (2 if greeting_enabled else 0)
-            print("PASS: greeting permission matrix, exact trigger, and duplicate delivery")
+            assert final["command_responses"] == (3 + len(replies) if greeting_enabled else 0)
+            print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
             process.terminate()
             process.wait(timeout=5)

@@ -1,4 +1,4 @@
-"""Receive signed OneBot events and optionally answer one allowlisted greeting."""
+"""Receive signed OneBot events and answer commands in allowlisted conversations."""
 
 from collections import deque
 from dataclasses import dataclass
@@ -15,11 +15,11 @@ from nonebot.drivers import Driver, Request, Response
 from nonebot.exception import IgnoredException
 from nonebot.message import event_preprocessor
 
+from legacy_commands import command_reply
+
 
 RUNTIME = Path(__file__).resolve().parent / ".runtime"
 PORT = 18765
-GREETING = "茉莉酱"
-GREETING_REPLY = "主人找我有什么事呢？"
 
 
 @dataclass(frozen=True)
@@ -60,8 +60,9 @@ class GreetingAccess:
 class ReceiveOnlyAdapter(Adapter):
     def __init__(self, driver: Driver, access: GreetingAccess | None):
         self.access = access
-        self.recent_greetings = deque(maxlen=256)
+        self.recent_commands = deque(maxlen=256)
         self.greeting_responses = 0
+        self.command_responses = 0
         super().__init__(driver)
 
     async def _call_api(self, bot: Bot, api: str, **data):
@@ -83,15 +84,22 @@ class ReceiveOnlyAdapter(Adapter):
         event = self.json_to_event(payload)
         if not isinstance(event, MessageEvent) or not self.access.allows(event):
             return response
-        if str(event.original_message) != GREETING:
+        message = event.original_message
+        if not message or any(segment.type != "text" for segment in message):
             return response
         key = (event.get_session_id(), event.message_id, event.time)
-        if key in self.recent_greetings:
+        if key in self.recent_commands:
             return response
-        self.recent_greetings.append(key)
-        self.greeting_responses += 1
+        text = message.extract_plain_text()
+        reply = command_reply(text, group=isinstance(event, GroupMessageEvent))
+        if reply is None:
+            return response
+        self.recent_commands.append(key)
+        self.command_responses += 1
+        if text == "茉莉酱":
+            self.greeting_responses += 1
         # OpenQQ selects the destination from its original event.
-        operation = {"reply": GREETING_REPLY, "at_sender": False, "auto_escape": True}
+        operation = {"reply": reply, "at_sender": False, "auto_escape": True}
         return Response(
             200, headers={"Content-Type": "application/json"}, content=json.dumps(operation)
         )
@@ -131,9 +139,10 @@ def start():
             **status,
             "greeting_enabled": access is not None,
             "greeting_responses": adapter.greeting_responses,
+            "command_responses": adapter.command_responses,
         }
 
-    # A scoped greeting uses the POST response; no outbound action API is needed.
+    # OpenQQ executes quick replies from this signed event's response.
     nonebot.run(ws="none", access_log=False)
 
 
