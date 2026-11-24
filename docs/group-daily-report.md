@@ -1,0 +1,36 @@
+# 群信息日报与开源模板对照
+
+## 四个项目怎样统计
+
+| 项目与成品 | 数据怎样变成日报 | 读者能回答的问题 |
+|---|---|---|
+| AstrBot 群日常分析，手账、简报、海报 | 对传入的消息逐条计数，对发送者 ID 去重，累加文字段字符与表情，按发送小时分桶。另把有效文本送给模型，输出话题名、讨论内容和参与者，再把参与者 ID 核回这批消息中已知的身份。手账、简报等视觉主题共用数据，分别排版。 | “今天聊了什么，谁参与了？”条数可复算，话题及金句带有模型的选择。[统计实现](https://github.com/SXP-Simon/astrbot_plugin_qq_group_daily_analysis/blob/246051ae5a4b101a39d450fde96af9a6c41ba636/src/domain/services/statistics_service.py) · [话题实现](https://github.com/SXP-Simon/astrbot_plugin_qq_group_daily_analysis/blob/246051ae5a4b101a39d450fde96af9a6c41ba636/src/infrastructure/analysis/analyzers/topic_analyzer.py) · [主题及样图](https://github.com/SXP-Simon/astrbot_plugin_qq_group_daily_analysis/tree/246051ae5a4b101a39d450fde96af9a6c41ba636) |
+| NoneBot WordCloud，日词云 | 默认用 jieba 对周期内的聊天文本分词，以词在文本中的频率和参考词库的逆文档频率计算 TF-IDF 权重。可换 rjieba，过滤停用词和短词后按出现次数计权。词云用权重决定相对字号。 | “哪些词有代表性？”同一人刷词也会影响结果，图上的权重不能当作参与人数。[两种后端实现](https://github.com/he0119/nonebot-plugin-wordcloud/blob/7654455248e679ccc2fdff9688955b3c05fe7fc0/nonebot_plugin_wordcloud/analyzer.py) |
+| FG-plugin，每日热词短报 | 清理日志中的 CQ 码、URL 等，分词后在句内用 5 词窗口连接共现词，用 PageRank 给词排序。按每群设定的词长和数量筛选，填进固定文案。词数不足时使用另一条文案。 | “哪些词串起了当天的讨论？”它能给候选词，无法仅凭词表还原决定和待办。[日报生成](https://github.com/mgsky1/FG-plugin/blob/f5dafa9797868d20f4a422c965e7e61099499f2e/nonebot_plugin_fg/core.py) · [共现图计算](https://github.com/mgsky1/FG-plugin/blob/f5dafa9797868d20f4a422c965e7e61099499f2e/nonebot_plugin_fg/util.py) |
+| QQ Chatlog Analyze Tool，成员和互动图 | 按发送者账号统计发言占比。在可配置的滑动时间窗内统计不同发言者，取峰值，源码的回退值为 10 分钟。分别累计明确引用、点名 @ 和同一会话中不同人相邻发言形成的推断关系。 | “谁在同一时段出现，谁明确回应谁？”前者是发言重叠，后者有引用或 @ 作为依据。该项目适合作为日报互动栏的参考。[群统计实现](https://github.com/woowss/qq-chatlog-analyze-tool/blob/58284d2559b52baff86d542a7dbc4fa6182b753a/analyzer/group_stats.py) |
+
+举例说，甲连续发了十次“地图”，乙只说一次“周六三点集合”，却被五条回复引用。按词频，“地图”会靠前。按被引用次数，集合通知会靠前。要概括成“大家约在周六三点”，还得读回复内容，辨别大家是在同意、询问还是改时间。
+
+## 茉莉当前日报的口径
+
+| 栏目 | 统计规则 |
+|---|---|
+| 日期与范围 | 按北京时间当天 00:00 至次日 00:00 前的归档消息逐群统计。当天预览截止生成时刻。仅计群内 `post_type=message` 且发送者异于本机器人 QQ 的记录。私聊、自发上报和快速回复均不计入群友发言。档案中其他账号是否属于机器人，无法从这个条件判定。 |
+| 发言量与排行 | 一条上报计一条，沿用归档去重。总数含匿名消息。人数按非匿名发送者 QQ 去重。前十个账号按发言数降序、同数按 QQ 升序；占比分母为全部群消息。并列同名者保留各自 QQ，展示当日最后一次可用的群名片或昵称。 |
+| 两种高峰 | 每小时按条数计，列出全部并列最高小时。另在当日以每条可识别发言的时间向前滑动 600 秒，统计窗口内不同发言 QQ，以首次达到最大人数的时刻标记峰值。左端不计、右端计入。 |
+| 字符、图片与表情 | 所有文字段按 Unicode 码点长度相加。消息类型按“含该类型的消息条数”计。两张图在同一条消息里算一条含图消息，图文消息同时计入含图和含文字。QQ 表情使用 `face` 段，普通 Unicode 表情随正文计字符。 |
+| @ 与引用 | 一条消息内重复 @ 同一账号计一次；两个账号计两人次。@全体单列。含有效引用号的消息计一条引用。显式引用在同条消息中按目标号去重，按该原话收到的引用消息数显示前五。查原话限定同一机器人、同群和不晚于引用的时间，同号有歧义时只给引用方归档号。 |
+| 分享链接 | 提取纯文字段里的 HTTP/HTTPS 链接，同一消息内按链接去重，按分享它的不同消息数取前五，附首次分享的归档号。不同查询参数保留为不同链接。日报生成器在本机读取文本。 |
+
+群友在热闹时段没有使用引用或链接时，这两栏会如实留空。没有自动生成的语义摘要。归档启用日、接收器离线时段及 OpenQQ 未上报的消息都会影响覆盖范围。
+
+## 查看与复算
+
+| 用途 | 在部署电脑上运行 |
+|---|---|
+| 预览今天各群截至目前的日报 | `ssh moribot-openqq moribot-daily` |
+| 查看昨天各群的日报 | `ssh moribot-openqq moribot-daily --yesterday` |
+| 只看一群的一天，替换示例群号和日期 | `ssh moribot-openqq moribot-daily --group 20000 --date 2026-11-24` |
+| 用日报里的归档号回查完整原消息，替换示例编号 | `ssh moribot-openqq moribot-messages --id 42 --jsonl` |
+
+服务器每天北京时间 00:10 将前一天的日报写入私有目录 `/var/lib/moribot-daily/YYYY-MM-DD-群号.md`，每个有群消息上报的群一份。命令行查看时直接从归档复算，之后补入的消息也会纳入。定时服务只读消息库，在无网络的独立进程内生成 Markdown。

@@ -1,0 +1,17 @@
+[Unit]
+Description=Build private daily digests from archived QQ group messages
+After=moribot-receiver.service
+
+[Service]
+Type=oneshot
+User=moribot-qq
+Group=moribot-qq
+ExecStart=/usr/bin/python3 -B /opt/moribot-openqq/receive_only/daily_report.py --yesterday --save /var/lib/moribot-daily
+StateDirectory=moribot-daily
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes

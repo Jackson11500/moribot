@@ -1,0 +1,10 @@
+[Unit]
+Description=Build yesterday's QQ group digests at 00:10 Beijing time
+
+[Timer]
+OnCalendar=*-*-* 00:10:00 Asia/Shanghai
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

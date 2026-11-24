@@ -1,5 +1,11 @@
 # 部署与排障记录
 
+## 群信息日报（2026-11-24）
+
+用 `moribot-daily` 查今天，指定 `--group` 和 `--date` 可复算历史。阅读者拿日报中的本地编号执行 `moribot-messages --id 42 --jsonl` 回查原始事件。系统按群和北京时间从只读归档统计，参与者按 QQ 去重。比较小时消息数和十分钟发言人数时，注意两者的单位不同。匿名发言、跨日引用和混合消息段的计数口径见[模板对照与日报说明](../../../../docs/group-daily-report.md)。
+
+独立的 `moribot-daily.timer` 在北京时间 00:10 调用同名 service，运行身份为 `moribot-qq`，无网络，逐群原子写入 `/var/lib/moribot-daily`。目录 0700，文件 0600。查看下次运行用 `systemctl show moribot-daily.timer -p NextElapseUSecRealtime`；查看最近一次结果用 `systemctl show moribot-daily.service -p Result`。服务补唤醒时计算当时的昨日，多日缺失可按日期以服务账号重算。部署时核对消息查看器已有版本以及可执行权限。修改日报无需重启 OpenQQ 或接收器。已通过两端的 `receive_only/check_daily.py`、生产 service 启动和服务账号读取当日正式数据并写入临时日报的验证。
+
 ## 长期群消息归档（2026-11-24）
 
 OpenQQ 的签名 HTTP 接口先核对签名、账号和消息类型，再写入 `/var/lib/moribot-dialogue/messages.sqlite3`，随后才分派有回复权限的指令。覆盖机器人收到的所有群，包括非测试群的普通消息，以及 OpenQQ 实际上报的机器人自发消息。好友私聊仅归档已授权本人的会话。完整上报包含媒体消息段和引用号。快速回复另存于触发记录的 `quick_reply`，表示接收器提供给 OpenQQ 的操作。单纯收录群消息不会触发模型。历史引用给模型的取值范围仍由近期缓存控制。

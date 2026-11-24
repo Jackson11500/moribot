@@ -106,6 +106,7 @@ def main():
     parser = argparse.ArgumentParser(description="查看茉莉长期保存的 OneBot 消息。日期按北京时间。")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--groups", action="store_true", help="列出已归档群号及上报消息数")
+    parser.add_argument("--id", type=int, help="按本地归档编号定位一条消息")
     parser.add_argument("--group", type=int, help="按群号筛选")
     parser.add_argument("--date", type=date.fromisoformat, help="北京时间 YYYY-MM-DD，默认读取当天全部记录")
     count = parser.add_mutually_exclusive_group()
@@ -115,7 +116,7 @@ def main():
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit 必须为正整数")
-    if args.groups and (args.group is not None or args.date or args.limit or args.all or args.jsonl):
+    if args.groups and (args.group is not None or args.date or args.limit or args.all or args.jsonl or args.id is not None):
         parser.error("--groups 单独使用")
     if not args.db.is_file():
         parser.exit(1, "尚未创建消息归档库。\n")
@@ -125,6 +126,9 @@ def main():
                 print(f"{chat}\t{total}")
             return
         filters, params = [], []
+        if args.id is not None:
+            filters.append("id=?")
+            params.append(args.id)
         if args.group is not None:
             filters.append("kind='group' AND chat=?")
             params.append(args.group)
