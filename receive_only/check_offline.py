@@ -397,6 +397,29 @@ def check(greeting_enabled=False):
                 assert found["reply_at"] and found["quick_reply"]["reply"][1]["data"]["text"] == "模拟对白 [CQ:at,qq=all]"
             else:
                 assert not private_rows and all(r["quick_reply"] is None for r in all_rows)
+            if greeting_enabled:
+                local = next(r for r in all_rows if r["event"].get("group_id") == 20000
+                             and r["event"]["message_id"] == 700)
+                foreign = next(r for r in all_rows if r["event"].get("group_id") == 20003
+                               and r["event"]["message_id"] == 700)
+                assert "昨日日报" in command(group, "本群查询")
+                assert "本条已入库" in command(group, "运行状态")
+                assert "累计归档" in command(group, "消息统计")
+                assert "本群最近消息" in command(group, "最近消息")
+                assert "周六" in command(group, f"查记录 #{local['id']}")
+                assert "本群没有" in command(group, f"查记录 #{foreign['id']}")
+                assert "本群没有" in command(group, f"查记录 #{private_rows[0]['id']}")
+                assert "北京时间" in mention(group, [bot_at, words(" 日报")], True)
+                assert "信息日报" in command(group, "昨日日报")
+                assert "暂无符合条件" in command(group, "日报 2025-06-02")
+                assert "请输入" in command(group, "日报 2025-02-30")
+                assert "请输入" in command(group, "查记录 #9999999999999999999")
+                for denied in (private, second_group, dict(group, group_id=20001),
+                               dict(group, user_id=30004, sender={"user_id": 30004})):
+                    command(denied, "最近消息", False)
+                mention(dict(group, group_id=20003), [bot_at, words(" 运行状态")])
+                assert status()["ai_requests"] == final["ai_requests"]
+                print("PASS: scoped group queries, event-bound records, command priority and duplicates")
             print("PASS: durable group capture, self reports, scoped private history, date export and deduplication")
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
@@ -462,7 +485,7 @@ if __name__ == "__main__":
         old = GreetingAccess.load(path)
         check_archive_reopen(old)
         assert old.groups == {20000: "test", 20002: "test"}
-        assert old.profiles["test"] == MODULE_LABELS.keys() - {"ai_dialogue"}
+        assert old.profiles["test"] == MODULE_LABELS.keys() - {"ai_dialogue", "group_reports"}
         for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
                        {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]},
                        {"groups": {"20000": "unknown"}, "profiles": {}},

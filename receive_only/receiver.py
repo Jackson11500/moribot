@@ -20,6 +20,7 @@ from nonebot.message import event_preprocessor
 from deepseek_dialogue import DeepSeekDialogue, UNAVAILABLE
 from dialogue_context import RecentMessages, addressed_text, model_context
 from dialogue_log import journal_path
+from group_queries import GroupQuery, parse_query, run_query
 from legacy_commands import ASK_MODEL, MODULE_LABELS, command_reply, module_names
 from message_archive import MessageArchive, conversation_id
 
@@ -102,6 +103,8 @@ class GreetingAccess:
                 lines.append(f"{title} · {profile}\n已开：{module_names(self.profiles[profile])}")
             return "\n".join(lines)
         modules = None if group is None else self.profiles[self.groups[group]]
+        if group is not None and (query := parse_query(text)):
+            return query if "group_reports" in modules else None
         return command_reply(text, group_modules=modules, mentioned=mentioned)
 
 
@@ -165,10 +168,13 @@ class ReceiveOnlyAdapter(Adapter):
         reply = self.access.reply(event, text, mentioned=mentioned)
         if reply is None:
             return response
-        if reply is ASK_MODEL:
+        if reply is ASK_MODEL or isinstance(reply, GroupQuery):
             self.in_flight.add(key)
             try:
-                if self.dialogue:
+                if isinstance(reply, GroupQuery):
+                    reply = await run_query(reply, journal_path(RUNTIME).with_name("messages.sqlite3"),
+                                            event.self_id, event.group_id, row_id, self.dialogue is not None)
+                elif self.dialogue:
                     context = model_context(payload, text, quote_id, source)
                     reply = await self.dialogue.answer(context, payload, source)
                 else:

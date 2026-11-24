@@ -20,6 +20,7 @@ MODULE_LABELS = {
     "chatting": "聊天", "someone_say": "有人说制图", "random_pic": "随机图片（缺图库）",
     "user": "签到与排行（缺资料）",
     "ai_dialogue": "@茉莉智能对话",
+    "group_reports": "本群查询（日报、状态、记录）",
 }
 ASK_MODEL = object()
 TEMPLATES = ("鲁迅说", "鲁迅", "年号", "宁宁", "千代", "nobeta", "追杀图", "追杀",

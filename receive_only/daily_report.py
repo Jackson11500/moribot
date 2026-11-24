@@ -53,16 +53,20 @@ def excerpt(parts):
     return label(content[:90]) + ("…" if len(content) > 90 else "")
 
 
-def report(db, group, day, start, end, as_of):
+def report(db, group, day, start, end, as_of, *, bot_id=None):
     total = anonymous = chars = person_mentions = everyone = quoted = 0
     hours = [0] * 24
     members, types, links, citations = Counter(), Counter(), Counter(), Counter()
     names, link_sources, first_quote = {}, {}, {}
     window, recent_people = deque(), Counter()
     peak_people, peak_end = 0, None
-    rows = db.execute("""SELECT id,bot,sender,sent_at,event FROM messages
-        WHERE kind='group' AND chat=? AND sent_at>=? AND sent_at<? AND post_type='message' AND sender<>bot
-        ORDER BY sent_at,id""", (group, start, end))
+    query = """SELECT id,bot,sender,sent_at,event FROM messages
+        WHERE kind='group' AND chat=? AND sent_at>=? AND sent_at<? AND post_type='message' AND sender<>bot"""
+    params = [group, start, end]
+    if bot_id is not None:
+        query += " AND bot=?"
+        params.append(bot_id)
+    rows = db.execute(query + " ORDER BY sent_at,id", params)
     for row_id, bot, sender, stamp, raw in rows:
         event = json.loads(raw)
         total += 1
