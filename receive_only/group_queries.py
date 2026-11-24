@@ -12,15 +12,17 @@ import subprocess
 from time import monotonic
 
 from daily_chart import render_png
-from daily_report import collect_day, markdown
+from daily_report import collect_day, markdown, prepare
+from report_topics import STORE, set_name
 from legacy_commands import image_reply
 from message_archive import LOCAL_TIME, preview
 
 
-MENU = ("查看指令\n日报 / 昨日日报 / 日报 YYYY-MM-DD（图表）\n日报详情 [YYYY-MM-DD]（文字、引用和链接）\n运行状态 / 群权限 / 消息统计\n"
+MENU = ("查看指令\n日报 / 昨日日报 / 日报 YYYY-MM-DD（图表、话题、关键词）\n日报详情 [YYYY-MM-DD]（文字）\n运行状态 / 群权限 / 消息统计\n"
         "最近消息（5 条，可加 #编号 查看更早的消息）\n查记录 #编号 [页码]")
 ADMIN_MENU = (MENU + "\n\n管理群专用\n群列表　列出已归档的群\n群 <群号> 日报 / 昨日日报 / 日报 YYYY-MM-DD"
-              "\n群 <群号> 日报详情 [YYYY-MM-DD] / 最近消息 / 消息统计 / 查记录 #编号\n查记录 #编号　跨群或本人私聊查原文"
+              "\n群 <群号> 日报详情 [YYYY-MM-DD] / 最近消息 / 消息统计 / 查记录 #编号\n群 <群号> 日报名 <展示名>"
+              "\n查记录 #编号　跨群或本人私聊查原文"
               "\n我的私聊　本人好友会话最近消息\n模型记录 / 模型回复 #调用编号 [页码]　查看 DeepSeek 问答"
               "\n列表有后续页时，末行给出下一条指令。")
 DATE_HELP = "请输入「日报 YYYY-MM-DD」，日期可选今天或更早。"
@@ -35,7 +37,11 @@ class GroupQuery:
 
     @property
     def admin_only(self):
-        return self.group_id is not None or self.kind in {"groups", "private", "calls", "call", "admin_help"}
+        return self.group_id is not None or self.kind in {"groups", "private", "calls", "call", "admin_help", "name"}
+
+    @property
+    def shareable(self):
+        return self.kind in {"today", "yesterday", "date", "details", "name"}
 
 
 def number(value):
@@ -60,13 +66,13 @@ def parse_query(text):
               "消息统计": "stats"}
     kind, value = simple.get(text), ""
     if kind is None:
-        match = re.fullmatch(r"(日报详情|日报|查记录|群列表|已归档群|最近消息|我的私聊|模型记录|模型回复)(?:[\s：:]+(.*)|(#.*))?", text)
+        match = re.fullmatch(r"(日报详情|日报名|日报|查记录|群列表|已归档群|最近消息|我的私聊|模型记录|模型回复)(?:[\s：:]+(.*)|(#.*))?", text)
         if not match:
             return GroupQuery("admin_help") if group is not None else None
-        kind = {"日报": "date", "日报详情": "details", "查记录": "record", "群列表": "groups", "已归档群": "groups",
+        kind = {"日报": "date", "日报详情": "details", "日报名": "name", "查记录": "record", "群列表": "groups", "已归档群": "groups",
                 "最近消息": "recent", "我的私聊": "private", "模型记录": "calls", "模型回复": "call"}[match[1]]
         value = (match[2] or match[3] or "").strip()
-    if group is not None and kind not in {"today", "yesterday", "date", "details", "stats", "recent", "record"}:
+    if group is not None and kind not in {"today", "yesterday", "date", "details", "name", "stats", "recent", "record"}:
         return GroupQuery("admin_help")
     return GroupQuery(kind, value, group)
 
@@ -132,13 +138,17 @@ def model_query(db, kind, bot, owner, item, page):
     return ("模型记录\n" + "\n".join(lines)) if lines else "没有匹配的模型调用。"
 
 
-def read_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None):
+def read_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None, analyzer=None):
     if query.admin_only and admin_owner is None:
         return "此查询仅限管理群。"
     if query.kind == "admin_help":
         return ADMIN_MENU
     if query.kind == "menu":
         return ADMIN_MENU if admin_owner is not None else MENU
+    if query.kind == "name":
+        if query.value and set_name(path.with_name(STORE), bot, query.group_id or group, query.value):
+            return "这个群的日报展示名已经记好啦。"
+        return "请输入用于日报的群名。"
     if query.kind == "status":
         qq, timer = service_states()
         return (f"运行状态\nOpenQQ：{qq}\n接收器：已收到本条上报\n本群归档：本条已入库"
@@ -186,10 +196,14 @@ def read_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None):
         params = ("group", target, bot)
         if query.kind in ("today", "yesterday", "date", "details"):
             stats = collect_day(db, target, day, start, end, now, bot_id=bot)
+            prepare(stats, path, bot, analyzer, wait=max(0, deadline - monotonic() - .15))
+            if analyzer is None and stats.texts and not stats.analysis:
+                stats.analysis_note = "话题分析暂未就绪。"
             raw = markdown(stats)
             if query.kind != "details":
-                command = (f"群 {target} " if query.group_id is not None else "") + f"日报详情 {day}"
-                caption = f"群 {target} · {day} · {stats.total} 条群消息\n看文字和原文编号可发「{command}」。"
+                caption = f"{stats.group_name} · {day} · {stats.total} 条群消息"
+                if stats.analysis_note:
+                    caption += "\n" + stats.analysis_note
                 try:
                     return image_reply(render_png(stats), caption)
                 except OSError:
@@ -234,9 +248,9 @@ def read_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None):
         return paged_detail(text, page, f"{prefix}查记录 #{item}")
 
 
-async def run_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None):
+async def run_query(query, path, bot, group, row_id, ai_ready, *, admin_owner=None, analyzer=None):
     try:
         return await asyncio.wait_for(asyncio.to_thread(read_query, query, path, bot, group, row_id, ai_ready,
-                                                       admin_owner=admin_owner), 3.3)
+                                                       admin_owner=admin_owner, analyzer=analyzer), 3.3)
     except (TimeoutError, sqlite3.Error):
         return "这次没能读完本群记录，稍后再试一下吧。"

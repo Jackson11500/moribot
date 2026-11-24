@@ -23,6 +23,7 @@ from dialogue_log import journal_path
 from group_queries import GroupQuery, parse_query, run_query
 from legacy_commands import ASK_MODEL, MODULE_LABELS, command_reply, module_names
 from message_archive import MessageArchive, conversation_id
+from report_topics import ReportAnalyzer, STORE, set_name, setup_store
 
 
 RUNTIME = Path(__file__).resolve().parent / ".runtime"
@@ -121,10 +122,11 @@ class GreetingAccess:
 
 class ReceiveOnlyAdapter(Adapter):
     def __init__(self, driver: Driver, access: GreetingAccess | None, dialogue: DeepSeekDialogue | None,
-                 archive: MessageArchive):
+                 archive: MessageArchive, analyzer=None):
         self.access = access
         self.dialogue = dialogue
         self.archive = archive
+        self.analyzer = analyzer
         self.archive_errors = 0
         self.in_flight = set()
         self.recent_messages = RecentMessages()
@@ -147,6 +149,11 @@ class ReceiveOnlyAdapter(Adapter):
             return response
         payload = json.loads(request.content)
         if not isinstance(payload, dict) or str(payload.get("self_id")) != header_id:
+            return response
+        if (self.access and payload.get("post_type") == "notice" and payload.get("notice_type") == "group_name"
+                and type(payload.get("group_id")) is int and isinstance(payload.get("group_name"), str)):
+            set_name(journal_path(RUNTIME).with_name(STORE), self.access.bot_id, payload["group_id"],
+                     payload["group_name"], reported=True)
             return response
         chat = conversation_id(payload, self.access.user_id if self.access else None)
         if chat is None:
@@ -177,6 +184,7 @@ class ReceiveOnlyAdapter(Adapter):
             return response
         text, mentioned, quote_id, source = addressed
         reply = self.access.reply(event, text, mentioned=mentioned)
+        shareable = isinstance(reply, GroupQuery) and reply.shareable
         if reply is None:
             return response
         if reply is ASK_MODEL or isinstance(reply, GroupQuery):
@@ -185,7 +193,8 @@ class ReceiveOnlyAdapter(Adapter):
                 if isinstance(reply, GroupQuery):
                     reply = await run_query(reply, journal_path(RUNTIME).with_name("messages.sqlite3"),
                                             event.self_id, event.group_id, row_id, self.dialogue is not None,
-                                            admin_owner=self.access.user_id if self.access.archive_admin(event) else None)
+                                            admin_owner=self.access.user_id if self.access.archive_admin(event) else None,
+                                            analyzer=self.analyzer)
                 elif self.dialogue:
                     context = model_context(payload, text, quote_id, source)
                     reply = await self.dialogue.answer(context, payload, source)
@@ -195,7 +204,7 @@ class ReceiveOnlyAdapter(Adapter):
                 self.in_flight.discard(key)
         if isinstance(event, GroupMessageEvent):
             body = [{"type": "text", "data": {"text": reply}}] if isinstance(reply, str) else reply
-            reply = [{"type": "reply", "data": {"id": str(event.message_id)}}, *body]
+            reply = body if shareable else [{"type": "reply", "data": {"id": str(event.message_id)}}, *body]
         # Store exactly the quick operation we give OpenQQ, independently of delivery.
         operation = {"reply": reply, "at_sender": False, "auto_escape": True}
         try:
@@ -214,7 +223,7 @@ class ReceiveOnlyAdapter(Adapter):
         )
 
 
-def start(*, model_transport=None):
+def start(*, model_transport=None, report_transport=None):
     secret = (RUNTIME / "post-secret").read_text(encoding="ascii").strip()
     if not secret:
         raise RuntimeError("Empty OneBot HTTP signing secret")
@@ -232,12 +241,21 @@ def start(*, model_transport=None):
     calls_path = journal_path(RUNTIME)
     archive = MessageArchive(calls_path.with_name("messages.sqlite3"), calls_path, access)
     dialogue = DeepSeekDialogue.load(RUNTIME, model_transport)
+    analyzer = None
+    if access:
+        store = calls_path.with_name(STORE)
+        if dialogue:
+            analyzer = ReportAnalyzer(store, (RUNTIME / "deepseek-key").read_text(encoding="ascii").strip(), report_transport)
+        else:
+            setup_store(store)
     driver = nonebot.get_driver()
     driver.on_shutdown(archive.close)
     if dialogue:
         driver.on_shutdown(dialogue.client.aclose)
         driver.on_shutdown(dialogue.close_journal)
-    driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue, archive=archive)
+    if analyzer:
+        driver.on_shutdown(analyzer.close)
+    driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue, archive=archive, analyzer=analyzer)
     adapter = nonebot.get_adapter(ReceiveOnlyAdapter)
     status = {"events": 0, "messages": 0, "last_event_utc": None}
 

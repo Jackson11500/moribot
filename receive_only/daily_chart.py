@@ -50,7 +50,18 @@ def render_png(s: GroupDay):
     note_lines = wrap_note(s.mori_note())
     ranking_rows = max(1, min(len(s.ranking), 5))
     note_end = 352 + len(note_lines) * 39
-    hourly_top = note_end + 48
+    agenda = []
+    y = note_end + 54
+    for heading, body in s.analysis_sections():
+        for line in wrap_note(heading):
+            agenda.append((y, line, True))
+            y += 38
+        for paragraph in body.splitlines():
+            for line in wrap_note(paragraph):
+                agenda.append((y, line, False))
+                y += 36
+        y += 16
+    hourly_top = y + 26
     ranking_top = hourly_top + 275
     types_top = ranking_top + 70 + ranking_rows * 56
     interactions_top = types_top + 295
@@ -73,7 +84,7 @@ def render_png(s: GroupDay):
 
     # Masthead and the fox's folded-paper silhouette.
     draw.rectangle((0, 0, WIDTH, 180), fill=INK)
-    write(LEFT, 39, f"{s.day:%Y.%m.%d}   /   群 {s.group}", 24, "#C7DFD4")
+    write(LEFT, 39, f"{s.day:%Y.%m.%d}   /   " + short_name(s.group_name, 450), 24, "#C7DFD4")
     write(LEFT - 2, 102, "茉莉的群聊日报", 56, WHITE, bold=True)
     partial = s.day == s.as_of.date()
     span = f"截至 {s.as_of:%H:%M}" if partial else "全天"
@@ -99,6 +110,9 @@ def render_png(s: GroupDay):
     for i, line in enumerate(note_lines):
         write(LEFT + 22, 372 + i * 39, line, 27)
 
+    for y, line, heading in agenda:
+        write(LEFT, y, line, 27 if heading else 25, ORANGE if heading else INK, bold=heading)
+    draw.line((LEFT, hourly_top - 29, RIGHT, hourly_top - 29), fill=LINE, width=2)
     section(hourly_top, "几点最热闹", "每小时归档消息 / 条")
     left, step = 99, 31
     base = hourly_top + 172
@@ -128,9 +142,8 @@ def render_png(s: GroupDay):
     section(ranking_top, "谁来冒过泡", "发言前五 / 条")
     for i, (uid, count) in enumerate(s.ranking[:5]):
         y = ranking_top + 57 + i * 56
-        write(LEFT, y, short_name(s.names.get(uid, "未上报昵称"), 205), 26)
-        write(LEFT + 220, y, f"QQ {uid}", 22, MUTED)
-        track(500, y - 3, 242, count, s.ranking[0][1], TEAL)
+        write(LEFT, y, short_name(s.person(uid), 345), 26)
+        track(411, y - 3, 331, count, s.ranking[0][1], TEAL)
         write(RIGHT, y, f"{count:,}", 26, anchor="rm")
     if not s.ranking:
         write(LEFT, ranking_top + 57, "只有匿名发言，咱认不出是谁。" if s.anonymous else "还没有发言账号。", 26, MUTED)
@@ -157,4 +170,7 @@ def render_png(s: GroupDay):
 
     output = BytesIO()
     sheet.save(output, format="PNG", compress_level=4)
+    if output.tell() > 500 * 1024:
+        output = BytesIO()
+        sheet.convert("P", palette=Image.Palette.ADAPTIVE, colors=64).save(output, format="PNG")
     return output.getvalue()

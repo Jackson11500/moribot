@@ -4,7 +4,7 @@
 import argparse
 from collections import Counter, deque
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from html import escape
 import json
@@ -14,6 +14,7 @@ import sqlite3
 import tempfile
 
 from message_archive import DEFAULT_DB, LOCAL_TIME
+from report_topics import CONTROL, FALLBACK_NAME, STORE, clean, display, saved_metadata
 
 
 CQ = re.compile(r"\[CQ:([\w-]+)((?:,[^\]]*)?)\]")
@@ -75,6 +76,28 @@ class GroupDay:
     peak_end: int | None
     quote_lines: list[str]
     link_lines: list[str]
+    group_name: str = FALLBACK_NAME
+    texts: list = field(default_factory=list)
+    analysis: dict | None = None
+    analysis_note: str = ""
+
+    def person(self, uid):
+        return "匿名群友" if uid is None else self.names.get(uid, "群友")
+
+    def analysis_sections(self):
+        a = self.analysis
+        if not a:
+            note = self.analysis_note or ("这天还没有可分析的聊天文字。" if not self.texts else "在群里查询这天的日报，咱就来整理话题。")
+            return [("话题与关键词", note)]
+        sections = [("讨论关键词", "　".join(f"{w}（{n}条）" for w,n in a["keywords"]) or "可用文字里还没找到代表词。")]
+        for t in a["topics"]:
+            sections.append((f"{t['title']} · {t['status']}", t["finding"] + "\n参与者（据所引发言）　" + "、".join(t["people"])))
+        if not a["topics"]:
+            sections.append(("讨论进展", "咱看过这些发言了，还没有可归纳的话题。"))
+        sections.append(("分析范围", f"本次分析于 {a['as_of']} 取样，选读 {a['sampled']} / {a['total']} 条有效文字。词后为提到它的消息条数。"))
+        if self.analysis_note:
+            sections.append(("更新进度", self.analysis_note))
+        return sections
 
     @property
     def peak_hours(self):
@@ -105,9 +128,11 @@ class GroupDay:
 def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
     total = anonymous = chars = person_mentions = everyone = quoted = 0
     hours = [0] * 24
-    members, types, links, citations = Counter(), Counter(), Counter(), Counter()
-    names, link_sources, first_quote = {}, {}, {}
+    members, types, citations = Counter(), Counter(), Counter()
+    links = set()
+    names, first_quote = {}, {}
     window, recent_people = deque(), Counter()
+    texts, group_name = [], ""
     peak_people, peak_end = 0, None
     query = """SELECT id,bot,sender,sent_at,event FROM messages
         WHERE kind='group' AND chat=? AND sent_at>=? AND sent_at<? AND post_type='message' AND sender<>bot"""
@@ -118,6 +143,8 @@ def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
     rows = db.execute(query + " ORDER BY sent_at,id", params)
     for row_id, bot, sender, stamp, raw in rows:
         event = json.loads(raw)
+        if event.get("group_name"):
+            group_name = display(event["group_name"], "")
         total += 1
         hours[datetime.fromtimestamp(stamp, LOCAL_TIME).hour] += 1
         while window and window[0][0] <= stamp - 600:
@@ -130,26 +157,34 @@ def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
         else:
             members[sender] += 1
             author = event.get("sender") or {}
-            display = author.get("card") or author.get("nickname")
-            if display:
-                names[sender] = display
+            who = display(author.get("card"), "") or display(author.get("nickname"), "")
+            if who:
+                names[sender] = who
             window.append((stamp, sender))
             recent_people[sender] += 1
             if len(recent_people) > peak_people:
                 peak_people, peak_end = len(recent_people), stamp
 
         seen_types, targets, references, urls = set(), set(), set(), set()
+        words = []
         for part in segments(event.get("message")):
             kind, data = part["type"], part.get("data", {})
             seen_types.add(kind)
             if kind == "text":
                 text = data.get("text", "")
                 chars += len(text)
+                words.append(text)
                 urls.update(m.group().rstrip(".,;!?") for m in URL.finditer(text))
             elif kind == "at" and data.get("qq") is not None:
                 targets.add(str(data["qq"]))
             elif kind == "reply" and data.get("id") is not None:
                 references.add(str(data["id"]))
+        plain = "".join(words).strip()
+        if plain and not CONTROL.match(plain):
+            safe = clean(plain)
+            if safe:
+                uid = None if event.get("sub_type") == "anonymous" or event.get("anonymous") else sender
+                texts.append((row_id, uid, safe))
         types.update(seen_types)
         person_mentions += sum(t.isascii() and t.isdecimal() for t in targets)
         everyone += int("all" in targets)
@@ -158,9 +193,7 @@ def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
             key = (bot, target)
             citations[key] += 1
             first_quote.setdefault(key, (stamp, row_id))
-        for url in urls:
-            links[url] += 1
-            link_sources.setdefault(url, row_id)
+        links.update(urls)
 
     quote_lines = []
     for (bot, target), n in sorted(citations.items(), key=lambda pair: (-pair[1], first_quote[pair[0]]))[:5]:
@@ -168,23 +201,41 @@ def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
         originals = db.execute("""SELECT id,event FROM messages WHERE bot=? AND kind='group' AND chat=?
             AND message_id=? AND sent_at<=? AND id<>? LIMIT 2""", (bot, group, target, stamp, first_id)).fetchall()
         if len(originals) == 1:
-            original_id, raw = originals[0]
+            _, raw = originals[0]
             quote = excerpt(segments(json.loads(raw).get("message")))
-            quote_lines.append(f"- {n} 条消息引用 · 原文归档 #{original_id} · {quote}")
+            quote_lines.append(f"- {n} 条消息引用 · {clean(quote) or '原文仅含媒体或联系方式'}")
         else:
-            quote_lines.append(f"- {n} 条消息引用 · 消息号 {label(target)} · 原文无法唯一定位，可查引用方归档 #{first_id}")
-    link_lines = [f"- <{url}> · {n} 条消息分享 · 首见归档 #{link_sources[url]}"
-                  for url, n in sorted(links.items(), key=lambda pair: (-pair[1], link_sources[pair[0]], pair[0]))[:5]]
+            quote_lines.append(f"- {n} 条消息引用 · 原文无法唯一定位")
+    link_lines = [f"共分享 {len(links)} 个不同链接。"] if links else []
+    # Resolve display collisions locally without publishing the account used for aggregation.
+    by_name = Counter(names.get(uid, "群友") for uid in members)
+    seen_names = Counter()
+    for uid in sorted(members):
+        name = names.get(uid, "群友")
+        seen_names[name] += 1
+        names[uid] = f"{name}（{seen_names[name]}）" if by_name[name] > 1 else name
     return GroupDay(group, day, as_of, total, anonymous, chars, hours,
                     sorted(members.items(), key=lambda pair: (-pair[1], pair[0])), names, types,
-                    quoted, person_mentions, everyone, peak_people, peak_end, quote_lines, link_lines)
+                    quoted, person_mentions, everyone, peak_people, peak_end, quote_lines, link_lines,
+                    group_name or FALLBACK_NAME, texts)
+
+
+def prepare(stats, path, bot, analyzer=None, *, wait=.25):
+    name, previous = saved_metadata(path.with_name(STORE), bot, stats.group, stats.day)
+    stats.group_name = name or stats.group_name
+    if previous:
+        stats.analysis = json.loads(previous[2])
+    if analyzer is not None:
+        analyzer.attach(stats, bot, previous, wait)
 
 
 def markdown(s):
-    lines = [f"# 群 {s.group} · {s.day} 信息日报", "",
+    lines = [f"# {label(s.group_name)} · {s.day} 信息日报", "",
              f"统计依据为已归档群消息。生成于北京时间 {s.as_of:%Y-%m-%d %H:%M}。", "",
              f"群消息 **{s.total} 条**，可识别发言账号 **{len(s.ranking)} 个**，匿名消息 {s.anonymous} 条，正文 {s.chars} 字符。",
              "", f"茉莉手记　{s.mori_note()}"]
+    for title, body in s.analysis_sections():
+        lines += ["", "## " + title, "", body]
     if not s.total:
         return "\n".join([*lines, "这一天暂无符合条件的归档消息。"]) + "\n"
     peaks = "、".join(f"{h:02d} 时" for h in s.peak_hours)
@@ -196,8 +247,7 @@ def markdown(s):
               " · ".join(f"{h:02d} 时 {n} 条" for h, n in enumerate(s.hours) if n),
               "", "## 发言排行", ""]
     for uid, n in s.ranking[:10]:
-        display = label(s.names.get(uid, "未上报名片或昵称"))
-        lines.append(f"- {display}（QQ {uid}）　{n} 条，占全部群消息 {n / s.total:.1%}")
+        lines.append(f"- {label(s.person(uid))}　{n} 条，占全部群消息 {n / s.total:.1%}")
     if not s.ranking:
         lines.append("当日仅有匿名发言。")
     lines += ["", "## 消息与互动", "",
@@ -236,18 +286,26 @@ def main():
     end = min(start + 86400, int(as_of.timestamp()) + 1)
     if day > as_of.date():
         parser.error("请选择今天或以前的日期")
+    if args.save:
+        args.save.mkdir(mode=0o700, parents=True, exist_ok=True)
     with closing(sqlite3.connect(args.db.resolve().as_uri() + "?mode=ro", uri=True)) as db:
         db.execute("BEGIN")
-        groups = [args.group] if args.group is not None else [r[0] for r in db.execute(
-            """SELECT DISTINCT chat FROM messages WHERE kind='group' AND sent_at>=? AND sent_at<?
-               ORDER BY chat""", (start, end))]
-        for group in groups:
-            stats = collect_day(db, group, day, start, end, as_of)
+        if args.group is None:
+            groups = db.execute("""SELECT DISTINCT bot,chat FROM messages WHERE kind='group' AND sent_at>=?
+                                AND sent_at<? ORDER BY chat,bot""", (start,end)).fetchall()
+        else:
+            groups = db.execute("SELECT DISTINCT bot,chat FROM messages WHERE kind='group' AND chat=?",
+                                (args.group,)).fetchall() or [(None, args.group)]
+        for bot, group in groups:
+            stats = collect_day(db, group, day, start, end, as_of, bot_id=bot)
+            prepare(stats, args.db, bot)
             if args.save:
                 from daily_chart import render_png
                 png = render_png(stats)
-                save_report(args.save, f"{day}-{group}.png", png)
-                save_report(args.save, f"{day}-{group}.md", markdown(stats).encode("utf-8"))
+                folder = args.save / f"{bot}-{group}"
+                filename = re.sub(r'[<>:"/\\|?*]', "_", stats.group_name)
+                save_report(folder, f"{day}-{filename}.png", png)
+                save_report(folder, f"{day}-{filename}.md", markdown(stats).encode("utf-8"))
             else:
                 print(markdown(stats))
         if args.save:

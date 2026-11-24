@@ -46,6 +46,15 @@ async def fake_model(request):
     }]})
 
 
+def fake_report(request):
+    payload = json.loads(request.content)
+    assert payload["response_format"] == {"type":"json_object"}
+    lines = json.loads(payload["messages"][1]["content"])["rows"]
+    assert lines and all(len(r) == 3 for r in lines)
+    data = {"topics": [], "keywords": []}
+    return httpx.Response(200, json={"choices":[{"finish_reason":"stop","message":{"content":json.dumps(data)}}]})
+
+
 async def check_model_timeout():
     from unittest.mock import patch
     with tempfile.TemporaryDirectory() as tmp, patch.object(deepseek_dialogue, "MODEL_TIMEOUT", 0.01):
@@ -87,9 +96,9 @@ def check(greeting_enabled=False):
         code = (
             "from pathlib import Path; import receiver, sys; "
             "receiver.RUNTIME = Path(sys.argv[1]); receiver.PORT = int(sys.argv[2]); "
-            "from check_offline import fake_model, stop_on_eof; import httpx, threading; "
+            "from check_offline import fake_model, fake_report, stop_on_eof; import httpx, threading; "
             "threading.Thread(target=stop_on_eof, daemon=True).start(); "
-            "receiver.start(model_transport=httpx.MockTransport(fake_model))"
+            "receiver.start(model_transport=httpx.MockTransport(fake_model),report_transport=httpx.MockTransport(fake_report))"
         )
         process = subprocess.Popen(
             [sys.executable, "-c", code, directory, str(port)], cwd=Path(__file__).parent,
@@ -165,9 +174,16 @@ def check(greeting_enabled=False):
                         assert operation["at_sender"] is False and operation["auto_escape"] is True
                         result = operation["reply"]
                         if payload["message_type"] == "group":
-                            assert result[0] == {"type": "reply", "data": {"id": str(payload["message_id"])}}
-                            assert all(s["type"] in ("text", "image") for s in result[1:])
-                            body = result[1:]
+                            text = "".join(p["data"]["text"] for p in payload["message"]
+                                           if p["type"] == "text").strip() if isinstance(payload["message"],list) else ""
+                            from group_queries import parse_query
+                            query = parse_query(text)
+                            if query and query.shareable:
+                                body = result
+                            else:
+                                assert result[0] == {"type": "reply", "data": {"id": str(payload["message_id"])}}
+                                body = result[1:]
+                            assert all(s["type"] in ("text", "image") for s in body)
                             if len(body) == 1 and body[0]["type"] == "text":
                                 return body[0]["data"]["text"]
                             return body
@@ -413,15 +429,16 @@ def check(greeting_enabled=False):
                 assert "本群没有" in command(group, f"查记录 #{private_rows[0]['id']}")
                 def chart_reply(result, expected):
                     caption, picture = result
-                    assert expected in caption["data"]["text"] and "日报详情" in caption["data"]["text"]
+                    assert expected in caption["data"]["text"]
+                    assert all(uid not in caption["data"]["text"] for uid in ("20000","20100","30000"))
                     assert picture["type"] == "image"
                     encoded = picture["data"]["file"]
                     assert encoded.startswith("base64://")
                     with Image.open(BytesIO(base64.b64decode(encoded[9:], validate=True))) as chart:
                         assert chart.format == "PNG" and chart.width == 900 and chart.height > 1000
                         chart.verify()
-                chart_reply(mention(group, [bot_at, words(" 日报")], True), "群 20000")
-                chart_reply(command(group, "昨日日报"), "群 20000")
+                chart_reply(mention(group, [bot_at, words(" 日报")], True), "群聊")
+                chart_reply(command(group, "昨日日报"), "群聊")
                 chart_reply(command(group, "日报 2025-06-02"), "0 条群消息")
                 assert "暂无符合条件" in command(group, "日报详情 2025-06-02")
                 assert "请输入" in command(group, "日报 2025-02-30")
@@ -437,7 +454,8 @@ def check(greeting_enabled=False):
                 assert "管理群专用" not in command(group, "查看指令")
                 assert "20100" in command(admin, "群列表")
                 assert "群 20000" in command(admin, "群权限")
-                chart_reply(command(admin, "群 20100 日报 2025-06-02"), "群 20100 · 2025-06-02 · 1 条群消息")
+                assert "记好" in command(admin, "群 20100 日报名 山茶花园")
+                chart_reply(command(admin, "群 20100 日报 2025-06-02"), "山茶花园 · 2025-06-02 · 1 条群消息")
                 assert "合成群友" in command(admin, "群 20100 日报详情 2025-06-02")
                 assert "群 20100消息统计" in command(admin, "群20100 消息统计")
                 assert "合成群友" in mention(admin, [bot_at, words(" 群 20100 最近消息")], True)
@@ -458,7 +476,7 @@ def check(greeting_enabled=False):
                 stranger = dict(admin, user_id=30004, sender={"user_id": 30004, "role": "owner"})
                 command(stranger, f"查记录 #{foreign['id']}", False)
                 command(stranger, "查看指令", False)
-                for restricted in ("群列表", "群 20100 日报", "群 20100 日报详情", "群 20100 最近消息", "模型记录", "我的私聊"):
+                for restricted in ("群列表", "群 20100 日报", "群 20100 日报详情", "群 20100 日报名 名称", "群 20100 最近消息", "模型记录", "我的私聊"):
                     command(group, restricted, False)
                     command(private, restricted, False)
                     command(stranger, restricted, False)
