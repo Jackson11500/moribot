@@ -3,6 +3,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 #user-design
+/receive_only/.runtime/
 *userdata*
 .env.dev
 .env.prod

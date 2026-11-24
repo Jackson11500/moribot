@@ -1,0 +1,20 @@
+[Unit]
+Description=Moribot receive-only OneBot v11 receiver
+After=network.target
+[Service]
+Type=simple
+User=moribot-qq
+Group=moribot-qq
+WorkingDirectory=/opt/moribot-openqq/receive_only
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/moribot-openqq/venv/bin/python /opt/moribot-openqq/receive_only/receiver.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+UMask=0077
+StandardOutput=null
+[Install]
+WantedBy=multi-user.target

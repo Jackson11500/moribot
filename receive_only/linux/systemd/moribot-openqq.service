@@ -1,0 +1,27 @@
+[Unit]
+Description=Moribot OpenQQ dedicated QQ session
+After=network-online.target moribot-receiver.service
+Wants=network-online.target moribot-receiver.service
+StartLimitBurst=3
+StartLimitIntervalSec=120
+[Service]
+Type=simple
+User=moribot-qq
+Group=moribot-qq
+WorkingDirectory=/var/lib/moribot-openqq
+Environment=HOME=/var/lib/moribot-openqq
+Environment=OPENQQ_DATA_DIR=/var/lib/moribot-openqq/data
+Environment=OPENQQ_QQ_DISABLE_GPU=1
+Environment=XDG_RUNTIME_DIR=/run/moribot-openqq
+Environment=LANG=C.UTF-8
+RuntimeDirectory=moribot-openqq
+RuntimeDirectoryMode=0700
+UMask=0077
+PrivateTmp=yes
+ProtectHome=yes
+ExecStart=/usr/bin/dbus-run-session -- /usr/bin/xvfb-run -a -s "-screen 0 1280x800x24 -nolisten tcp" /opt/moribot-openqq/session.sh
+Restart=on-failure
+RestartSec=8
+StandardOutput=null
+[Install]
+WantedBy=multi-user.target

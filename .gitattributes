@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+receive_only/*.py text eol=lf
+receive_only/requirements.txt text eol=lf
+receive_only/linux/** text eol=lf
