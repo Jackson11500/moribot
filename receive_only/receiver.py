@@ -15,7 +15,7 @@ from nonebot.drivers import Driver, Request, Response
 from nonebot.exception import IgnoredException
 from nonebot.message import event_preprocessor
 
-from legacy_commands import command_reply
+from legacy_commands import MODULE_LABELS, command_reply, module_names
 
 
 RUNTIME = Path(__file__).resolve().parent / ".runtime"
@@ -26,7 +26,8 @@ PORT = 18765
 class GreetingAccess:
     bot_id: int
     user_id: int
-    group_ids: frozenset[int]
+    groups: dict[int, str]
+    profiles: dict[str, frozenset[str]]
 
     @classmethod
     def load(cls, path: Path):
@@ -34,23 +35,40 @@ class GreetingAccess:
             config = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(config, dict):
                 raise ValueError("Expected an access object")
-            if config.keys() == {"bot_id", "user_id", "group_id"}:
-                groups = [config["group_id"]]
-            elif config.keys() == {"bot_id", "user_id", "group_ids"}:
-                groups = config["group_ids"]
-            else:
-                raise ValueError("Invalid access fields")
-            if not isinstance(groups, list) or not groups:
-                raise ValueError("Expected a non-empty group list")
             bot, user = config["bot_id"], config["user_id"]
-            if any(type(v) is not int or v <= 0 for v in (bot, user, *groups)):
+            if any(type(v) is not int or v <= 0 for v in (bot, user)):
                 raise ValueError("Invalid ID")
             if bot == user:
                 raise ValueError("Bot cannot be its own caller")
-            return cls(bot, user, frozenset(groups))
+            fields = config.keys() - {"bot_id", "user_id"}
+            if fields == {"group_id"} or fields == {"group_ids"}:
+                ids = config.get("group_ids", [config.get("group_id")])
+                if not isinstance(ids, list) or not ids or any(type(i) is not int or i <= 0 for i in ids):
+                    raise ValueError("Invalid legacy group IDs")
+                # Preserve exactly the modules available before profiles existed.
+                legacy = frozenset(("greeting", "little_game", "technique", "chatting",
+                                    "someone_say", "random_pic", "user"))
+                return cls(bot, user, dict.fromkeys(ids, "test"), {"test": legacy})
+            if fields != {"profiles", "groups"}:
+                raise ValueError("Invalid access fields")
+            profiles = {}
+            if not isinstance(config["profiles"], dict) or not isinstance(config["groups"], dict):
+                raise ValueError("Expected profile and group maps")
+            for name, modules in config["profiles"].items():
+                if not name.strip() or not isinstance(modules, list) or not set(modules) <= MODULE_LABELS.keys():
+                    raise ValueError("Invalid permission profile")
+                profiles[name] = frozenset(modules)
+            groups = {}
+            for raw_id, profile in config["groups"].items():
+                if not raw_id.isascii() or not raw_id.isdecimal() or raw_id.startswith("0"):
+                    raise ValueError("Invalid group ID")
+                if profile not in profiles:
+                    raise ValueError("Unknown permission profile")
+                groups[int(raw_id)] = profile
+            return cls(bot, user, groups, profiles)
         except FileNotFoundError:
             return None
-        except (OSError, TypeError, ValueError):
+        except (OSError, KeyError, TypeError, ValueError):
             nonebot.logger.warning("Invalid greeting access file. Replies disabled.")
             return None
 
@@ -62,10 +80,23 @@ class GreetingAccess:
         if isinstance(event, PrivateMessageEvent):
             return event.sub_type == "friend"
         return (
-            event.group_id in self.group_ids
+            event.group_id in self.groups
             and event.sub_type == "normal"
             and event.anonymous is None
         )
+
+    def reply(self, event: MessageEvent, text: str):
+        group = event.group_id if isinstance(event, GroupMessageEvent) else None
+        if text in ("群权限", "群组状态"):
+            visible = self.groups if group is None else [group]
+            lines = ["群权限（仅你可调用）"]
+            for group_id in visible:
+                profile = self.groups[group_id]
+                title = f"群 {group_id}" if group is None else "本群"
+                lines.append(f"{title} · {profile}\n已开：{module_names(self.profiles[profile])}")
+            return "\n".join(lines)
+        modules = None if group is None else self.profiles[self.groups[group]]
+        return command_reply(text, group_modules=modules)
 
 
 class ReceiveOnlyAdapter(Adapter):
@@ -102,7 +133,7 @@ class ReceiveOnlyAdapter(Adapter):
         if key in self.recent_commands:
             return response
         text = message.extract_plain_text()
-        reply = command_reply(text, group=isinstance(event, GroupMessageEvent))
+        reply = self.access.reply(event, text)
         if reply is None:
             return response
         self.recent_commands.append(key)

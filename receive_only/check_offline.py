@@ -16,7 +16,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
 from PIL import Image, ImageChops
-from legacy_commands import ASSETS, GREETING, MISSING, PUZZLES
+from legacy_commands import ASSETS, GREETING, MISSING, MODULE_LABELS, PUZZLES
 
 
 def check(greeting_enabled=False):
@@ -35,7 +35,9 @@ def check(greeting_enabled=False):
         (Path(directory) / "post-secret").write_text(key, encoding="ascii")
         if greeting_enabled:
             (Path(directory) / "greeting-access.json").write_text(json.dumps(
-                {"bot_id": 10000, "user_id": 30000, "group_ids": [20000, 20002]}
+                {"bot_id": 10000, "user_id": 30000,
+                 "profiles": {"test": list(MODULE_LABELS), "games": ["greeting", "little_game"]},
+                 "groups": {"20000": "test", "20002": "games"}}
             ), encoding="ascii")
         code = (
             "from pathlib import Path; import receiver, sys; "
@@ -162,9 +164,19 @@ def check(greeting_enabled=False):
             )}
             private_menu = command(private, "茉莉酱!")
             second_menu = command(second_group, "游戏")
+            private_permissions = command(private, "群权限")
+            group_permissions = command(second_group, "群组状态")
+            limited_menu = command(second_group, "茉莉酱！")
+            for text in ("贴贴茉莉", "颜色大全", "实用资料", "鲁迅:测试", "有人说", "随机茉莉", "签到"):
+                command(second_group, text, False)
+            command(dict(group, group_id=20001), "群权限", False)
+            command(dict(second_group, user_id=30001, sender={"user_id": 30001}), "群权限", False)
             if greeting_enabled:
                 assert second_menu == replies["游戏"]
-                assert private_menu == replies["茉莉酱！"] and "测试群" in private_menu
+                assert "群权限" in private_menu and "测试群" in private_menu
+                assert "20000" in private_permissions and "20002" in private_permissions
+                assert "games" in group_permissions and "20000" not in group_permissions
+                assert "小游戏" in limited_menu and "制图" not in limited_menu
                 assert "骰子" in replies["游戏"] and "颜色列表" in replies["实用资料"]
                 assert "https://docs.qq.com/" in replies["蓝图档案馆"]
                 assert 1 <= int(replies["骰子：6"].split("丢出了一个")[1]) <= 6
@@ -189,7 +201,7 @@ def check(greeting_enabled=False):
             final = status()
             assert final["greeting_enabled"] is greeting_enabled
             assert final["greeting_responses"] == (3 if greeting_enabled else 0)
-            assert final["command_responses"] == (5 + len(replies) if greeting_enabled else 0)
+            assert final["command_responses"] == (8 + len(replies) if greeting_enabled else 0)
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
             process.terminate()
@@ -203,9 +215,14 @@ if __name__ == "__main__":
         path = Path(tmp) / "access.json"
         base_config = {"bot_id": 10000, "user_id": 30000}
         path.write_text(json.dumps(dict(base_config, group_id=20000)), encoding="ascii")
-        assert GreetingAccess.load(path).group_ids == {20000}
+        assert GreetingAccess.load(path).groups == {20000: "test"}
+        path.write_text(json.dumps(dict(base_config, group_ids=[20000, 20002])), encoding="ascii")
+        old = GreetingAccess.load(path)
+        assert old.groups == {20000: "test", 20002: "test"} and old.profiles["test"] == MODULE_LABELS.keys()
         for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
-                       {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]}):
+                       {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]},
+                       {"groups": {"20000": "unknown"}, "profiles": {}},
+                       {"groups": {"20000": "bad"}, "profiles": {"bad": ["typo"]}}):
             path.write_text(json.dumps({**base_config, **fields}), encoding="ascii")
             assert GreetingAccess.load(path) is None
     check()
