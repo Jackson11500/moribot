@@ -8,6 +8,9 @@
 Author: Lucky Clover  
 
 ## 功能
+
+[旧功能清单：指令、私聊与群聊权限、回复形式、OpenQQ 恢复条件](docs/legacy-features.md)
+
 * 实用资料
 * 源码查询（源码：mono）
 * 图片管家（随机图片...）
