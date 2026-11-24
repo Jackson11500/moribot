@@ -35,7 +35,7 @@ def check(greeting_enabled=False):
         (Path(directory) / "post-secret").write_text(key, encoding="ascii")
         if greeting_enabled:
             (Path(directory) / "greeting-access.json").write_text(json.dumps(
-                {"bot_id": 10000, "user_id": 30000, "group_id": 20000}
+                {"bot_id": 10000, "user_id": 30000, "group_ids": [20000, 20002]}
             ), encoding="ascii")
         code = (
             "from pathlib import Path; import receiver, sys; "
@@ -91,6 +91,7 @@ def check(greeting_enabled=False):
                            raw_message="茉莉酱", message=[{"type": "text", "data": {"text": "茉莉酱"}}])
             del private["group_id"]
             group = dict(private, message_type="group", sub_type="normal", group_id=20000)
+            second_group = dict(group, group_id=20002)
 
             def post(payload, expected_code=204, *, header_id="10000", signing_key=key):
                 data = json.dumps(payload).encode()
@@ -118,6 +119,7 @@ def check(greeting_enabled=False):
             for denied in (
                 dict(private, user_id=30001, sender={"user_id": 30001}),
                 dict(group, user_id=30001, sender={"user_id": 30001, "role": "owner"}),
+                dict(second_group, user_id=30001, sender={"user_id": 30001, "role": "owner"}),
                 dict(group, group_id=20001),
                 dict(group, self_id=10001),
                 dict(group, user_id=10000, sender={"user_id": 10000}),
@@ -129,7 +131,7 @@ def check(greeting_enabled=False):
             ):
                 post(denied)
             post(group, header_id="10001")
-            for allowed in (private, group):
+            for allowed in (private, group, second_group):
                 reply = post(allowed, 200 if greeting_enabled else 204)
                 assert reply == (GREETING if greeting_enabled else None)
                 post(allowed)  # The same event must never request two replies.
@@ -159,7 +161,9 @@ def check(greeting_enabled=False):
                 "年号：新春", "签到", "随机茉莉", "24点：1", "源码：mono", "颜色大全",
             )}
             private_menu = command(private, "茉莉酱!")
+            second_menu = command(second_group, "游戏")
             if greeting_enabled:
+                assert second_menu == replies["游戏"]
                 assert private_menu == replies["茉莉酱！"] and "测试群" in private_menu
                 assert "骰子" in replies["游戏"] and "颜色列表" in replies["实用资料"]
                 assert "https://docs.qq.com/" in replies["蓝图档案馆"]
@@ -184,8 +188,8 @@ def check(greeting_enabled=False):
                     assert diff.getbbox() and diff.getbbox()[1] > first.height // 2
             final = status()
             assert final["greeting_enabled"] is greeting_enabled
-            assert final["greeting_responses"] == (2 if greeting_enabled else 0)
-            assert final["command_responses"] == (3 + len(replies) if greeting_enabled else 0)
+            assert final["greeting_responses"] == (3 if greeting_enabled else 0)
+            assert final["command_responses"] == (5 + len(replies) if greeting_enabled else 0)
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
             process.terminate()
@@ -193,5 +197,16 @@ def check(greeting_enabled=False):
 
 
 if __name__ == "__main__":
+    from receiver import GreetingAccess
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "access.json"
+        base_config = {"bot_id": 10000, "user_id": 30000}
+        path.write_text(json.dumps(dict(base_config, group_id=20000)), encoding="ascii")
+        assert GreetingAccess.load(path).group_ids == {20000}
+        for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
+                       {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]}):
+            path.write_text(json.dumps({**base_config, **fields}), encoding="ascii")
+            assert GreetingAccess.load(path) is None
     check()
     check(greeting_enabled=True)

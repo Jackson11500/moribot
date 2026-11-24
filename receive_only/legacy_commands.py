@@ -1,4 +1,4 @@
-"""Explicit legacy commands for the two allowlisted test conversations."""
+"""Explicit legacy commands for allowlisted test conversations."""
 
 import base64
 from functools import lru_cache

@@ -26,17 +26,28 @@ PORT = 18765
 class GreetingAccess:
     bot_id: int
     user_id: int
-    group_id: int
+    group_ids: frozenset[int]
 
     @classmethod
     def load(cls, path: Path):
         try:
-            access = cls(**json.loads(path.read_text(encoding="utf-8")))
-            if any(type(v) is not int or v <= 0 for v in vars(access).values()):
+            config = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(config, dict):
+                raise ValueError("Expected an access object")
+            if config.keys() == {"bot_id", "user_id", "group_id"}:
+                groups = [config["group_id"]]
+            elif config.keys() == {"bot_id", "user_id", "group_ids"}:
+                groups = config["group_ids"]
+            else:
+                raise ValueError("Invalid access fields")
+            if not isinstance(groups, list) or not groups:
+                raise ValueError("Expected a non-empty group list")
+            bot, user = config["bot_id"], config["user_id"]
+            if any(type(v) is not int or v <= 0 for v in (bot, user, *groups)):
                 raise ValueError("Invalid ID")
-            if access.bot_id == access.user_id:
+            if bot == user:
                 raise ValueError("Bot cannot be its own caller")
-            return access
+            return cls(bot, user, frozenset(groups))
         except FileNotFoundError:
             return None
         except (OSError, TypeError, ValueError):
@@ -51,7 +62,7 @@ class GreetingAccess:
         if isinstance(event, PrivateMessageEvent):
             return event.sub_type == "friend"
         return (
-            event.group_id == self.group_id
+            event.group_id in self.group_ids
             and event.sub_type == "normal"
             and event.anonymous is None
         )
