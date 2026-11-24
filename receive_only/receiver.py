@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sqlite3
 
 import nonebot
 from nonebot.adapters.onebot.v11 import (
@@ -18,7 +19,9 @@ from nonebot.message import event_preprocessor
 
 from deepseek_dialogue import DeepSeekDialogue, UNAVAILABLE
 from dialogue_context import RecentMessages, addressed_text, model_context
+from dialogue_log import journal_path
 from legacy_commands import ASK_MODEL, MODULE_LABELS, command_reply, module_names
+from message_archive import MessageArchive, conversation_id
 
 
 RUNTIME = Path(__file__).resolve().parent / ".runtime"
@@ -103,9 +106,12 @@ class GreetingAccess:
 
 
 class ReceiveOnlyAdapter(Adapter):
-    def __init__(self, driver: Driver, access: GreetingAccess | None, dialogue: DeepSeekDialogue | None):
+    def __init__(self, driver: Driver, access: GreetingAccess | None, dialogue: DeepSeekDialogue | None,
+                 archive: MessageArchive):
         self.access = access
         self.dialogue = dialogue
+        self.archive = archive
+        self.archive_errors = 0
         self.in_flight = set()
         self.recent_messages = RecentMessages()
         self.recent_commands = deque(maxlen=256)
@@ -120,12 +126,26 @@ class ReceiveOnlyAdapter(Adapter):
     async def _handle_http(self, request: Request) -> Response:
         # The parent verifies the HMAC and schedules ordinary inbound processing.
         response = await super()._handle_http(request)
-        if response.status_code != 204 or self.access is None:
+        if response.status_code != 204:
             return response
-        if request.headers.get("x-self-id") != str(self.access.bot_id):
+        header_id = request.headers.get("x-self-id")
+        if self.access and header_id != str(self.access.bot_id):
             return response
         payload = json.loads(request.content)
-        if not isinstance(payload, dict) or payload.get("post_type") != "message":
+        if not isinstance(payload, dict) or str(payload.get("self_id")) != header_id:
+            return response
+        chat = conversation_id(payload, self.access.user_id if self.access else None)
+        if chat is None:
+            return response
+        try:
+            row_id, replied = self.archive.record(payload, chat)
+        except sqlite3.Error:
+            self.archive_errors += 1
+            nonebot.logger.exception("Cannot persist incoming message")
+            return Response(503)
+        if replied or self.access is None or payload["post_type"] != "message":
+            return response
+        if payload["message_type"] == "group" and chat not in self.access.groups:
             return response
         # Adapter validation adds original_message to its input dictionary.
         event = self.json_to_event(deepcopy(payload))
@@ -158,12 +178,19 @@ class ReceiveOnlyAdapter(Adapter):
         if isinstance(event, GroupMessageEvent):
             body = [{"type": "text", "data": {"text": reply}}] if isinstance(reply, str) else reply
             reply = [{"type": "reply", "data": {"id": str(event.message_id)}}, *body]
+        # Store exactly the quick operation we give OpenQQ, independently of delivery.
+        operation = {"reply": reply, "at_sender": False, "auto_escape": True}
+        try:
+            self.archive.quick_reply(row_id, operation)
+        except sqlite3.Error:
+            self.archive_errors += 1
+            nonebot.logger.exception("Cannot persist quick reply")
+            return Response(503)
         self.recent_commands.append(key)
         self.command_responses += 1
         if text == "茉莉酱":
             self.greeting_responses += 1
         # OpenQQ selects the destination from its original event.
-        operation = {"reply": reply, "at_sender": False, "auto_escape": True}
         return Response(
             200, headers={"Content-Type": "application/json"}, content=json.dumps(operation)
         )
@@ -184,12 +211,15 @@ def start(*, model_transport=None):
         onebot_v11_api_roots={},
     )
     access = GreetingAccess.load(RUNTIME / "greeting-access.json")
+    calls_path = journal_path(RUNTIME)
+    archive = MessageArchive(calls_path.with_name("messages.sqlite3"), calls_path, access)
     dialogue = DeepSeekDialogue.load(RUNTIME, model_transport)
     driver = nonebot.get_driver()
+    driver.on_shutdown(archive.close)
     if dialogue:
         driver.on_shutdown(dialogue.client.aclose)
         driver.on_shutdown(dialogue.close_journal)
-    driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue)
+    driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue, archive=archive)
     adapter = nonebot.get_adapter(ReceiveOnlyAdapter)
     status = {"events": 0, "messages": 0, "last_event_utc": None}
 
@@ -209,6 +239,7 @@ def start(*, model_transport=None):
             "greeting_enabled": access is not None,
             "greeting_responses": adapter.greeting_responses,
             "command_responses": adapter.command_responses,
+            "archive_errors": adapter.archive_errors,
             "ai_ready": dialogue is not None,
             "ai_requests": dialogue.requests if dialogue else 0,
             "ai_failures": dialogue.failures if dialogue else 0,

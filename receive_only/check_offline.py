@@ -3,6 +3,7 @@
 import asyncio
 import base64
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 import hashlib
 import hmac
 from io import BytesIO
@@ -26,6 +27,7 @@ from deepseek_dialogue import MODEL, UNAVAILABLE
 from dialogue_context import RecentMessages
 from dialogue_log import DialogueLog, read_calls
 from legacy_commands import ASSETS, GREETING, MISSING, MODULE_LABELS, PUZZLES
+from message_archive import LOCAL_TIME, MessageArchive
 
 
 async def fake_model(request):
@@ -139,7 +141,7 @@ def check(greeting_enabled=False):
             private = dict(event, message_type="private", sub_type="friend",
                            raw_message="茉莉酱", message=[{"type": "text", "data": {"text": "茉莉酱"}}])
             del private["group_id"]
-            group = dict(private, message_type="group", sub_type="normal", group_id=20000)
+            group = dict(private, message_type="group", sub_type="normal", group_id=20000, message_id=2)
             second_group = dict(group, group_id=20002)
 
             def post(payload, expected_code=204, *, header_id="10000", signing_key=key):
@@ -175,7 +177,7 @@ def check(greeting_enabled=False):
 
             post(private, 403, signing_key="wrong-key")
             post(group, 403, signing_key="wrong-key")
-            for denied in (
+            for index, denied in enumerate((
                 dict(private, user_id=30001, sender={"user_id": 30001}),
                 dict(group, user_id=30001, sender={"user_id": 30001, "role": "owner"}),
                 dict(second_group, user_id=30001, sender={"user_id": 30001, "role": "owner"}),
@@ -186,8 +188,8 @@ def check(greeting_enabled=False):
                 dict(private, sub_type="group"),
                 dict(private, message="茉莉酱！！"),
                 dict(private, post_type="message_sent"),
-            ):
-                post(denied)
+            )):
+                post(dict(denied, message_id=-20 - index))
             post(group, header_id="10001")
             for allowed in (private, group, second_group):
                 reply = post(allowed, 200 if greeting_enabled else 204)
@@ -209,6 +211,33 @@ def check(greeting_enabled=False):
 
             def words(text):
                 return {"type": "text", "data": {"text": text}}
+
+            # An ordinary group outside every reply profile is still fully archived.
+            day = datetime(2025, 6, 2, tzinfo=LOCAL_TIME)
+            other = dict(group, group_id=20100, user_id=30100, sender={"nickname": "合成群友", "user_id": 30100},
+                         message_id=801, time=int(day.timestamp()), raw_message="正文",
+                         message=[words("正文"), {"type": "image", "data": {"file": "example.jpg"}}])
+            post(other)
+            post(other)
+            post(dict(other, message_id=802, time=int(day.timestamp()) - 1))
+            post(dict(other, message_id=803, time=int((day + timedelta(days=1)).timestamp())))
+            post(dict(other, message_id=804, post_type="message_sent", user_id=10000, sender={"user_id": 10000}))
+            post(dict(other, group_id=20101))
+            post(dict(other, message_id=805), 403, signing_key="invalid")
+            post(dict(other, message_id=806), header_id="10001")
+            post(dict(other, message_id=807, self_id=10001))
+
+            archive_file = Path(directory) / "dialogue/messages.sqlite3"
+            archive_cli = [sys.executable, "-X", "utf8", str(Path(__file__).with_name("message_archive.py")),
+                           "--db", str(archive_file)]
+            def archive_rows(*args):
+                out = subprocess.check_output([*archive_cli, *args, "--jsonl"], encoding="utf-8")
+                return [json.loads(line) for line in out.splitlines()]
+            daily = archive_rows("--group", "20100", "--date", "2025-06-02")
+            assert [r["event"]["message_id"] for r in daily] == [801, 804]
+            assert daily[0]["event"] == other and all(r["quick_reply"] is None for r in daily)
+            assert len(archive_rows("--group", "20100", "--all")) == 4
+            assert archive_rows("--group", "20101")[0]["event"]["group_id"] == 20101
 
             def mention(event, parts, accepted=False):
                 nonlocal serial
@@ -296,6 +325,9 @@ def check(greeting_enabled=False):
                 listing = subprocess.check_output([sys.executable, "-X", "utf8", str(Path(__file__).with_name("dialogue_log.py")),
                                                    "--db", str(path), "--limit", "2"], encoding="utf-8")
                 assert "小禾：周六\n下午三点" in listing and "阿栗：我记成周日了？" in listing
+                all_calls = subprocess.check_output([sys.executable, "-X", "utf8", str(Path(__file__).with_name("dialogue_log.py")),
+                                                    "--db", str(path), "--all", "--json"], encoding="utf-8")
+                assert json.loads(all_calls) == list(reversed(records))
 
             for text in ("24点", "鲁迅说：测试", "颜色大全", "签到"):
                 command(private, text, False)
@@ -354,6 +386,18 @@ def check(greeting_enabled=False):
             assert final["ai_ready"] is greeting_enabled
             assert final["ai_requests"] == (5 if greeting_enabled else 0)
             assert final["ai_failures"] == (1 if greeting_enabled else 0)
+            assert final["archive_errors"] == 0
+            all_rows = archive_rows("--all")
+            assert len(archive_rows()) == 20 < len(all_rows)
+            private_rows = [r for r in all_rows if r["event"]["message_type"] == "private"]
+            assert all(r["event"]["user_id"] == 30000 for r in private_rows)
+            if greeting_enabled:
+                assert any(r["quick_reply"] and r["quick_reply"]["reply"] == GREETING for r in private_rows)
+                found = next(r for r in all_rows if r["event"]["message"] == question)
+                assert found["reply_at"] and found["quick_reply"]["reply"][1]["data"]["text"] == "模拟对白 [CQ:at,qq=all]"
+            else:
+                assert not private_rows and all(r["quick_reply"] is None for r in all_rows)
+            print("PASS: durable group capture, self reports, scoped private history, date export and deduplication")
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
             process.stdin.close()
@@ -365,6 +409,35 @@ def stop_on_eof():
     import _thread
     sys.stdin.buffer.read()
     _thread.interrupt_main()
+
+
+def check_archive_reopen(access):
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "messages.sqlite3"
+        calls = Path(directory) / "calls.sqlite3"
+        journal = DialogueLog(calls)
+        event = {"self_id": 10000, "group_id": 21000, "message_id": 1, "user_id": 31900,
+                 "time": 10, "post_type": "message", "message_type": "group", "message": "旧问题"}
+        quote = dict(event, message_id=2, message="旧引用")
+        journal.begin(event, quote, {})
+        journal.begin(event, quote, {})
+        journal.db.close()
+        archive = MessageArchive(path, calls, access)
+        try:
+            for n in range(3, 303):
+                archive.record(dict(event, message_id=n), 21000)
+            row_id, replied = archive.record(event, 21000)
+            assert not replied
+            archive.quick_reply(row_id, {"reply": "测试"})
+        finally:
+            archive.db.close()
+        reopened = MessageArchive(path, calls, access)
+        try:
+            assert reopened.record(event, 21000) == (row_id, True)
+            assert reopened.db.execute("SELECT COUNT(*) FROM messages").fetchone() == (302,)
+            assert reopened.db.execute("SELECT COUNT(*) FROM messages WHERE source='model_journal'").fetchone() == (2,)
+        finally:
+            reopened.db.close()
 
 
 if __name__ == "__main__":
@@ -387,6 +460,7 @@ if __name__ == "__main__":
         assert GreetingAccess.load(path).groups == {20000: "test"}
         path.write_text(json.dumps(dict(base_config, group_ids=[20000, 20002])), encoding="ascii")
         old = GreetingAccess.load(path)
+        check_archive_reopen(old)
         assert old.groups == {20000: "test", 20002: "test"}
         assert old.profiles["test"] == MODULE_LABELS.keys() - {"ai_dialogue"}
         for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
