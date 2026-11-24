@@ -11,6 +11,8 @@ description: 在 moribot 仓库部署、恢复或排查 OpenQQ、LLBot 与 NoneB
 
 查看某群某天的完整聊天，用 `moribot-messages --group <群号> --date YYYY-MM-DD --jsonl`。长期归档覆盖机器人收到的全部群，回复继续使用私有权限组。默认条数只用于查看。归档范围、历史补录与查错入口见[部署记录](references/deployment.md)。
 
+管理群发「查看指令」可列出跨群只读操作。管理权同时绑定私有配置中的 `user_id` 和 `admin_group_id`，核验时包括共享权限组的其他群和同群其他成员。
+
 查群日报时使用 `moribot-daily`，核对数据口径和开源参考见[日报说明](../../../docs/group-daily-report.md)。
 
 验证改动时运行 `receive_only/check_offline.py`。实机验收用上报心跳和自然到达的消息，避免向任何会话发送测试消息。授权、扫码由用户在本机完成。分享状态只需计数和时间，凭证、登录二维码及聊天正文留在运行环境。

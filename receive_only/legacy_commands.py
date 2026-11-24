@@ -203,7 +203,8 @@ def command_reply(text: str, *, group_modules: frozenset[str] | None, mentioned:
         if text in ("茉莉酱!", "茉莉酱！"):
             if private:
                 return GREETING + "\n私聊指令：你好、茉莉的命令大全、群权限（查看各测试群）。"
-            return GREETING + "\n本群已开：" + module_names(group_modules) + "。\n发送「群权限」查看本群权限。"
+            guide = "\n发送「查看指令」列出可用查询。" if "group_reports" in group_modules else ""
+            return GREETING + "\n本群已开：" + module_names(group_modules) + "。\n发送「群权限」查看权限。" + guide
         if text in ("茉莉的命令大全", "指令大全"):
             return static_image("legacy-help.png", "这是旧版指令图。发送「茉莉酱！」查看当前菜单。")
     if private:

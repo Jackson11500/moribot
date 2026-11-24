@@ -79,10 +79,10 @@ def check(greeting_enabled=False):
         if greeting_enabled:
             (Path(directory) / "deepseek-key").write_text("offline-test", encoding="ascii")
             (Path(directory) / "greeting-access.json").write_text(json.dumps(
-                {"bot_id": 10000, "user_id": 30000,
+                {"bot_id": 10000, "user_id": 30000, "admin_group_id": 20004,
                  "profiles": {"test": list(MODULE_LABELS), "games": ["greeting", "little_game"],
                               "ai_only": ["ai_dialogue"]},
-                 "groups": {"20000": "test", "20002": "games", "20003": "ai_only"}}
+                 "groups": {"20000": "test", "20002": "games", "20003": "ai_only", "20004": "test"}}
             ), encoding="ascii")
         code = (
             "from pathlib import Path; import receiver, sys; "
@@ -418,6 +418,38 @@ def check(greeting_enabled=False):
                                dict(group, user_id=30004, sender={"user_id": 30004})):
                     command(denied, "最近消息", False)
                 mention(dict(group, group_id=20003), [bot_at, words(" 运行状态")])
+                # Two groups share a feature profile. Only the explicit management group grants cross-chat reads.
+                admin = dict(group, group_id=20004)
+                menu = command(admin, "查看指令")
+                assert "管理群专用" in menu and "模型回复" in menu and "群列表" in menu
+                assert "管理群专用" not in command(group, "查看指令")
+                assert "20100" in command(admin, "群列表")
+                assert "群 20000" in command(admin, "群权限")
+                assert "群 20100" in command(admin, "群 20100 日报 2025-06-02")
+                assert "群 20100消息统计" in command(admin, "群20100 消息统计")
+                assert "合成群友" in mention(admin, [bot_at, words(" 群 20100 最近消息")], True)
+                assert "他群同号消息" in command(admin, f"查记录 #{foreign['id']}")
+                assert "没有这个归档" in command(admin, f"群 20100 查记录 #{foreign['id']}")
+                assert "本人私聊" in command(admin, f"查记录 #{private_rows[0]['id']}")
+                assert "本人私聊最近消息" in command(admin, "我的私聊")
+                assert "调用 #" in command(admin, "模型记录")
+                assert "提问人 QQ" in command(admin, "模型回复 #1")
+                assert "没有匹配" in command(admin, "模型记录 #1")
+                assert "请输入" in command(admin, "模型回复 #0")
+                long_message = dict(original, group_id=20100, message_id=900, message=[words("甲" * 1700 + "末页标记")])
+                post(long_message)
+                long_id = archive_rows("--group","20100","--all")[-1]["id"]
+                first_page = command(admin, f"群 20100 查记录 #{long_id}")
+                assert f"下一页：群 20100 查记录 #{long_id} 2" in first_page and "末页标记" not in first_page
+                assert "末页标记" in command(admin, f"群 20100 查记录 #{long_id} 2")
+                stranger = dict(admin, user_id=30004, sender={"user_id": 30004, "role": "owner"})
+                command(stranger, f"查记录 #{foreign['id']}", False)
+                command(stranger, "查看指令", False)
+                for restricted in ("群列表", "群 20100 最近消息", "模型记录", "我的私聊"):
+                    command(group, restricted, False)
+                    command(private, restricted, False)
+                    command(stranger, restricted, False)
+                    mention(dict(group, group_id=20003), [bot_at, words(" " + restricted)])
                 assert status()["ai_requests"] == final["ai_requests"]
                 print("PASS: scoped group queries, event-bound records, command priority and duplicates")
             print("PASS: durable group capture, self reports, scoped private history, date export and deduplication")
@@ -486,6 +518,11 @@ if __name__ == "__main__":
         check_archive_reopen(old)
         assert old.groups == {20000: "test", 20002: "test"}
         assert old.profiles["test"] == MODULE_LABELS.keys() - {"ai_dialogue", "group_reports"}
+        assert old.admin_group_id is None
+        for bad in (None, True, "20000", 20002):
+            path.write_text(json.dumps({**base_config, "groups":{"20000":"test"}, "profiles":{"test":["group_reports"]},
+                                        "admin_group_id":bad}))
+            assert GreetingAccess.load(path) is None
         for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
                        {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]},
                        {"groups": {"20000": "unknown"}, "profiles": {}},

@@ -35,6 +35,7 @@ class GreetingAccess:
     user_id: int
     groups: dict[int, str]
     profiles: dict[str, frozenset[str]]
+    admin_group_id: int | None = None
 
     @classmethod
     def load(cls, path: Path):
@@ -56,7 +57,7 @@ class GreetingAccess:
                 legacy = frozenset(("greeting", "little_game", "technique", "chatting",
                                     "someone_say", "random_pic", "user"))
                 return cls(bot, user, dict.fromkeys(ids, "test"), {"test": legacy})
-            if fields != {"profiles", "groups"}:
+            if fields - {"admin_group_id"} != {"profiles", "groups"}:
                 raise ValueError("Invalid access fields")
             profiles = {}
             if not isinstance(config["profiles"], dict) or not isinstance(config["groups"], dict):
@@ -72,7 +73,11 @@ class GreetingAccess:
                 if profile not in profiles:
                     raise ValueError("Unknown permission profile")
                 groups[int(raw_id)] = profile
-            return cls(bot, user, groups, profiles)
+            admin_group = config.get("admin_group_id")
+            if "admin_group_id" in fields and (type(admin_group) is not int or admin_group not in groups
+                                              or "group_reports" not in profiles[groups[admin_group]]):
+                raise ValueError("Invalid archive administration group")
+            return cls(bot, user, groups, profiles, admin_group)
         except FileNotFoundError:
             return None
         except (OSError, KeyError, TypeError, ValueError):
@@ -92,19 +97,25 @@ class GreetingAccess:
             and event.anonymous is None
         )
 
+    def archive_admin(self, event: Event):
+        return (isinstance(event, GroupMessageEvent) and self.allows(event)
+                and event.group_id == self.admin_group_id)
+
     def reply(self, event: MessageEvent, text: str, *, mentioned: bool = False):
         group = event.group_id if isinstance(event, GroupMessageEvent) else None
         if text in ("群权限", "群组状态"):
-            visible = self.groups if group is None else [group]
+            visible = self.groups if group is None or self.archive_admin(event) else [group]
             lines = ["群权限（仅你可调用）"]
             for group_id in visible:
                 profile = self.groups[group_id]
-                title = f"群 {group_id}" if group is None else "本群"
+                title = f"群 {group_id}" if group is None or self.archive_admin(event) else "本群"
                 lines.append(f"{title} · {profile}\n已开：{module_names(self.profiles[profile])}")
             return "\n".join(lines)
         modules = None if group is None else self.profiles[self.groups[group]]
         if group is not None and (query := parse_query(text)):
-            return query if "group_reports" in modules else None
+            if "group_reports" in modules and (not query.admin_only or self.archive_admin(event)):
+                return query
+            return None
         return command_reply(text, group_modules=modules, mentioned=mentioned)
 
 
@@ -173,7 +184,8 @@ class ReceiveOnlyAdapter(Adapter):
             try:
                 if isinstance(reply, GroupQuery):
                     reply = await run_query(reply, journal_path(RUNTIME).with_name("messages.sqlite3"),
-                                            event.self_id, event.group_id, row_id, self.dialogue is not None)
+                                            event.self_id, event.group_id, row_id, self.dialogue is not None,
+                                            admin_owner=self.access.user_id if self.access.archive_admin(event) else None)
                 elif self.dialogue:
                     context = model_context(payload, text, quote_id, source)
                     reply = await self.dialogue.answer(context, payload, source)
