@@ -1,3 +1,4 @@
 nonebot2[fastapi]==2.5.0
 nonebot-adapter-onebot==2.4.6
 Pillow==12.2.0
+httpx==0.28.1

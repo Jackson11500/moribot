@@ -1,6 +1,8 @@
 """Exercise the real HTTP receiver on a temporary port without starting LLBot."""
 
+import asyncio
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import hmac
 from io import BytesIO
@@ -16,7 +18,35 @@ from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
 from PIL import Image, ImageChops
+import httpx
+import deepseek_dialogue
+from deepseek_dialogue import MODEL, UNAVAILABLE
 from legacy_commands import ASSETS, GREETING, MISSING, MODULE_LABELS, PUZZLES
+
+
+async def fake_model(request):
+    assert str(request.url) == "https://api.deepseek.com/chat/completions"
+    assert request.headers["authorization"] == "Bearer offline-test"
+    body = json.loads(request.content)
+    system, user = body["messages"]
+    assert body["model"] == MODEL and system["role"] == "system" and "用茉莉的口吻接话" in system["content"]
+    assert user["role"] == "user"
+    if user["content"] == "模拟失败":
+        return httpx.Response(503)
+    await asyncio.sleep(0.15)
+    return httpx.Response(200, json={"choices": [{
+        "message": {"content": "模拟对白 [CQ:at,qq=all]"}, "finish_reason": "stop",
+    }]})
+
+
+async def check_model_timeout():
+    from unittest.mock import patch
+    with patch.object(deepseek_dialogue, "MODEL_TIMEOUT", 0.01):
+        model = deepseek_dialogue.DeepSeekDialogue("offline-test", "用茉莉的口吻接话", httpx.MockTransport(fake_model))
+        try:
+            assert await model.answer("模拟慢回复") == UNAVAILABLE and model.failures == 1
+        finally:
+            await model.client.aclose()
 
 
 def check(greeting_enabled=False):
@@ -34,15 +64,18 @@ def check(greeting_enabled=False):
         key = secrets.token_hex(32)
         (Path(directory) / "post-secret").write_text(key, encoding="ascii")
         if greeting_enabled:
+            (Path(directory) / "deepseek-key").write_text("offline-test", encoding="ascii")
             (Path(directory) / "greeting-access.json").write_text(json.dumps(
                 {"bot_id": 10000, "user_id": 30000,
-                 "profiles": {"test": list(MODULE_LABELS), "games": ["greeting", "little_game"]},
-                 "groups": {"20000": "test", "20002": "games"}}
+                 "profiles": {"test": list(MODULE_LABELS), "games": ["greeting", "little_game"],
+                              "ai_only": ["ai_dialogue"]},
+                 "groups": {"20000": "test", "20002": "games", "20003": "ai_only"}}
             ), encoding="ascii")
         code = (
             "from pathlib import Path; import receiver, sys; "
             "receiver.RUNTIME = Path(sys.argv[1]); receiver.PORT = int(sys.argv[2]); "
-            "receiver.start()"
+            "from check_offline import fake_model; import httpx; "
+            "receiver.start(model_transport=httpx.MockTransport(fake_model))"
         )
         process = subprocess.Popen(
             [sys.executable, "-c", code, directory, str(port)], cwd=Path(__file__).parent
@@ -112,7 +145,17 @@ def check(greeting_enabled=False):
                         operation = json.load(reply)
                         assert set(operation) == {"reply", "at_sender", "auto_escape"}
                         assert operation["at_sender"] is False and operation["auto_escape"] is True
-                        return operation["reply"]
+                        result = operation["reply"]
+                        if payload["message_type"] == "group":
+                            assert result[0] == {"type": "reply", "data": {"id": str(payload["message_id"])}}
+                            assert all(s["type"] in ("text", "image") for s in result[1:])
+                            body = result[1:]
+                            if len(body) == 1 and body[0]["type"] == "text":
+                                return body[0]["data"]["text"]
+                            return body
+                        if isinstance(result, list):
+                            assert all(s["type"] in ("text", "image") for s in result)
+                        return result
                     elif reply.status == 204:
                         assert reply.read() == b""
 
@@ -127,7 +170,6 @@ def check(greeting_enabled=False):
                 dict(group, user_id=10000, sender={"user_id": 10000}),
                 dict(group, sub_type="anonymous"),
                 dict(private, sub_type="group"),
-                dict(group, message=[{"type": "at", "data": {"qq": "10000"}}, *group["message"]]),
                 dict(private, message="茉莉酱！！"),
                 dict(private, post_type="message_sent"),
             ):
@@ -147,6 +189,61 @@ def check(greeting_enabled=False):
                 result = post(payload, 200 if accepted and greeting_enabled else 204)
                 post(payload)
                 return result
+
+            def at(qq):
+                return {"type": "at", "data": {"qq": qq}}
+
+            def words(text):
+                return {"type": "text", "data": {"text": text}}
+
+            def mention(event, parts, accepted=False):
+                nonlocal serial
+                serial += 1
+                payload = dict(event, message_id=serial, message=parts, raw_message="ignored")
+                result = post(payload, 200 if accepted and greeting_enabled else 204)
+                post(payload)
+                return result
+
+            bot_at = at("10000")
+            addressed = [bot_at, words("　小游戏")]
+            front = mention(group, addressed, True)
+            end = mention(second_group, [words("游戏 "), at(10000), words(" ")], True)
+            bare = mention(group, [bot_at], True)
+            for parts in ([at("all"), words("游戏")], [at("30001"), words("游戏")],
+                          [bot_at, at("30001"), words("游戏")], [bot_at, bot_at, words("游戏")],
+                          [words("游"), bot_at, words("戏")], [words("@茉莉 游戏")],
+                          [words("[CQ:at,qq=10000]游戏")],
+                          [{"type": "reply", "data": {"id": "10"}}, *addressed],
+                          [bot_at, {"type": "image", "data": {"file": "test.jpg"}}]):
+                mention(group, parts)
+            mention(private, addressed)
+            mention(second_group, [bot_at])
+            mention(second_group, [bot_at, words(" 鲁迅：测试")])
+            mention(dict(group, group_id=20001), addressed)
+            mention(dict(group, user_id=30001, sender={"user_id": 30001}), addressed)
+            if greeting_enabled:
+                assert front == end and "骰子" in front
+                assert bare == "模拟对白 [CQ:at,qq=all]"
+            ai_only = dict(group, group_id=20003)
+            mention(ai_only, addressed)
+            mention(ai_only, [bot_at, words(" 茉莉酱")])
+            mention(ai_only, [bot_at, words(" 鲁迅：测试")])
+            mention(second_group, [bot_at, words(" 今天真累")])
+            command(group, "今天真累", False)
+            mention(dict(group, group_id=20001), [bot_at, words(" 今天真累")])
+            mention(dict(group, user_id=30001, sender={"user_id": 30001}), [bot_at, words(" 今天真累")])
+            if greeting_enabled:
+                serial += 1
+                payload = dict(group, message_id=serial, message=[bot_at, words(" 今天真累")])
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    future = pool.submit(post, payload, 200)
+                    for _ in range(100):
+                        if status()["ai_requests"] == 2:
+                            break
+                        time.sleep(0.01)
+                    post(payload)
+                    assert future.result() == "模拟对白 [CQ:at,qq=all]"
+                assert mention(group, [bot_at, words(" 模拟失败")], True) == UNAVAILABLE
 
             for text in ("24点", "鲁迅说：测试", "颜色大全", "签到"):
                 command(private, text, False)
@@ -201,7 +298,10 @@ def check(greeting_enabled=False):
             final = status()
             assert final["greeting_enabled"] is greeting_enabled
             assert final["greeting_responses"] == (3 if greeting_enabled else 0)
-            assert final["command_responses"] == (8 + len(replies) if greeting_enabled else 0)
+            assert final["command_responses"] == (13 + len(replies) if greeting_enabled else 0)
+            assert final["ai_ready"] is greeting_enabled
+            assert final["ai_requests"] == (3 if greeting_enabled else 0)
+            assert final["ai_failures"] == (1 if greeting_enabled else 0)
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
             process.terminate()
@@ -211,6 +311,8 @@ def check(greeting_enabled=False):
 if __name__ == "__main__":
     from receiver import GreetingAccess
 
+    asyncio.run(check_model_timeout())
+
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "access.json"
         base_config = {"bot_id": 10000, "user_id": 30000}
@@ -218,7 +320,8 @@ if __name__ == "__main__":
         assert GreetingAccess.load(path).groups == {20000: "test"}
         path.write_text(json.dumps(dict(base_config, group_ids=[20000, 20002])), encoding="ascii")
         old = GreetingAccess.load(path)
-        assert old.groups == {20000: "test", 20002: "test"} and old.profiles["test"] == MODULE_LABELS.keys()
+        assert old.groups == {20000: "test", 20002: "test"}
+        assert old.profiles["test"] == MODULE_LABELS.keys() - {"ai_dialogue"}
         for fields in ({"group_ids": []}, {"group_ids": "20000"}, {"group_ids": [20000, True]},
                        {"group_ids": [20000, -1]}, {"group_id": 20000, "group_ids": [20002]},
                        {"groups": {"20000": "unknown"}, "profiles": {}},

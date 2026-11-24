@@ -19,7 +19,9 @@ MODULE_LABELS = {
     "greeting": "问候与指南", "little_game": "小游戏", "technique": "实用资料",
     "chatting": "聊天", "someone_say": "有人说制图", "random_pic": "随机图片（缺图库）",
     "user": "签到与排行（缺资料）",
+    "ai_dialogue": "@茉莉智能对话",
 }
+ASK_MODEL = object()
 TEMPLATES = ("鲁迅说", "鲁迅", "年号", "宁宁", "千代", "nobeta", "追杀图", "追杀",
              "喜报", "猫娘", "气晕", "小本本")
 GROUP_TEXT = {
@@ -144,76 +146,57 @@ def roll(name: str, argument: str | None):
     return f"使用了一个自定义{name}（{low}~{high}），丢出了一个{random.randint(low, high)}"
 
 
-def game_reply(command: str):
-    if command == "小游戏":
-        return GROUP_TEXT[command]
+def puzzle_reply():
+    try:
+        deck = puzzles()
+    except (OSError, UnicodeError):
+        return MISSING
+    if not deck:
+        return MISSING
+    return "随机24点：\n每个数字必须恰好用一次，用 + - * / 和括号算出 24。\n" + random.choice(deck)
+
+
+def group_command(command: str):
+    """Delay rendering until the caller has checked the matched module."""
+    if command in GROUP_TEXT:
+        module = {"小游戏": "little_game", "有人说": "someone_say"}.get(command, "technique")
+        return module, lambda: GROUP_TEXT[command]
+    if command in STATIC:
+        module = "technique" if command in ("逻辑大全", "颜色列表") else "chatting"
+        return module, lambda: static_image(*STATIC[command])
+    if command in CHAT:
+        return "chatting", lambda: random.choice(CHAT[command])
     if command == "24点":
-        try:
-            deck = puzzles()
-        except (OSError, UnicodeError):
-            return MISSING
-        if not deck:
-            return MISSING
-        return "随机24点：\n每个数字必须恰好用一次，用 + - * / 和括号算出 24。\n" + random.choice(deck)
+        return "little_game", puzzle_reply
     dice = re.fullmatch(r"(骰子|色子)(?:[：:](.*))?", command)
     if dice:
-        return roll(*dice.groups())
+        return "little_game", lambda: roll(*dice.groups())
     if re.fullmatch(r"24点[：:][0-9]+", command):
-        return MISSING
-
-
-def technique_reply(command: str):
-    if command in ("实用资料", "蓝图档案馆", "资料导航站"):
-        return GROUP_TEXT[command]
-    if command in ("逻辑大全", "颜色列表"):
-        return static_image(*STATIC[command])
+        return "little_game", lambda: MISSING
     if re.fullmatch(r"(?:源码[：:]|source ?=)[A-Za-z0-9_-]+", command):
-        return MISSING
-
-
-def chat_reply(command: str):
-    if command in CHAT:
-        return random.choice(CHAT[command])
-    if command in ("吸狐狸", "救命啊"):
-        return static_image(*STATIC[command])
-
-
-def template_reply(command: str):
-    if command == "有人说":
-        return GROUP_TEXT[command]
+        return "technique", lambda: MISSING
     parts = re.split("[：:]", command, maxsplit=1)
-    if len(parts) == 2:
-        name, argument = parts
-        if name in ("鲁迅说", "鲁迅"):
-            return luxun_quote(argument)
-        if name in TEMPLATES:
-            return MISSING
-
-
-def picture_reply(command: str):
+    if len(parts) == 2 and parts[0] in TEMPLATES:
+        if parts[0] in ("鲁迅说", "鲁迅"):
+            return "someone_say", lambda: luxun_quote(parts[1])
+        return "someone_say", lambda: MISSING
     if command.startswith("随机") and command[2:] in PICTURE_CATEGORIES:
-        return MISSING
-
-
-def user_reply(command: str):
+        return "random_pic", lambda: MISSING
     if command in ("签到", "排行榜"):
-        return MISSING
-
-
-GROUP_HANDLERS = {
-    "little_game": game_reply, "technique": technique_reply, "chatting": chat_reply,
-    "someone_say": template_reply, "random_pic": picture_reply, "user": user_reply,
-}
+        return "user", lambda: MISSING
+    return None
 
 
 def module_names(modules: frozenset[str]) -> str:
     return "、".join(label for key, label in MODULE_LABELS.items() if key in modules) or "无"
 
 
-def command_reply(text: str, *, group_modules: frozenset[str] | None):
+def command_reply(text: str, *, group_modules: frozenset[str] | None, mentioned: bool = False):
     # None is an authorized private conversation. An empty group policy allows no commands.
     private = group_modules is None
-    if private or "greeting" in group_modules:
+    if text in ("茉莉酱", "茉莉酱!", "茉莉酱！", "茉莉的命令大全", "指令大全"):
+        if not private and "greeting" not in group_modules:
+            return None
         if text == "茉莉酱":
             return GREETING
         if text in ("茉莉酱!", "茉莉酱！"):
@@ -224,10 +207,12 @@ def command_reply(text: str, *, group_modules: frozenset[str] | None):
             return static_image("legacy-help.png", "这是旧版指令图。发送「茉莉酱！」查看当前菜单。")
     if private:
         return "欢迎回来" if text == "你好" else None
-    command = ALIASES.get(text, text)
-    for module, handler in GROUP_HANDLERS.items():
-        if module in group_modules:
-            reply = handler(command)
-            if reply is not None:
-                return reply
+    match = group_command(ALIASES.get(text, text))
+    if match is not None:
+        module, render = match
+        return render() if module in group_modules else None
+    if mentioned and "ai_dialogue" in group_modules:
+        return ASK_MODEL
+    if mentioned and not text and "chatting" in group_modules:
+        return "是...在找我吗？"
     return None

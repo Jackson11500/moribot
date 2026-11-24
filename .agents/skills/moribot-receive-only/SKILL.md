@@ -7,7 +7,7 @@ description: 在 moribot 仓库部署、恢复或排查 OpenQQ、LLBot 与 NoneB
 
 接手任务时先读[部署与排障记录](references/deployment.md)。从仓库根目录执行其中的 PowerShell 命令。先查本机状态和已有运行目录，再决定是否需要安装。
 
-使用 `receive_only/receiver.py` 验签并核对私有白名单。`legacy_commands.py` 只处理本人好友私聊或本人在指定测试群发送的纯文字指令。当前可测指令与群聊限制见[功能清单](../../../docs/legacy-features.md)。文字及图片随原事件的 HTTP 响应返回。其他事件返回空 204。制图测试免费，用户旧档案和账本只在另有迁移任务时处理。
+使用 `receive_only/receiver.py` 验签并核对私有白名单。`legacy_commands.py` 只处理本人好友私聊或本人在获准测试群发送的文字和对机器人的直接 @。当前可测指令与群聊限制见[功能清单](../../../docs/legacy-features.md)。群内文字和图片通过原事件的 HTTP 响应引用触发消息。直接 @ 先分派指令，未命中且该群启用 ai_dialogue 时才调用 DeepSeek。其他事件返回空 204。制图测试免费，用户旧档案和账本只在另有迁移任务时处理。
 
 验证改动时运行 `receive_only/check_offline.py`。实机验收用上报心跳和自然到达的消息，避免向任何会话发送测试消息。授权、扫码由用户在本机完成。分享状态只需计数和时间，凭证、登录二维码及聊天正文留在运行环境。
 

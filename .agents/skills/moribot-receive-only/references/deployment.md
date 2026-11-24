@@ -1,5 +1,13 @@
 # 部署与排障记录
 
+## 双向 @、引用与 DeepSeek（2026-11-24）
+
+签名 HTTP 快速回复读取原始消息段。旧的全为 text 检查会忽略 OpenQQ 的 at 段。现在接受群内文字开头或结尾的单个 at，目标与事件中的机器人身份一致才继续。用户、群、模块照常校验。引用、其他目标、全体和混合媒体不会启动智能对话。群回复首段使用 reply，id 取当前入站 message_id；后接普通文字段或图片段。at_sender 控制回 @ 发送者，与引用不同，当前保持 false。
+
+配置中的 ai_dialogue 单独控制智能对话。已匹配指令（含别名、缺图分支）按其原模块分派；关闭的指令保持静默。仅将授权本人主动 @ 的本条自由文本交给 DeepSeek，使用服务器上的 .agents/skills/moribot-dialogue/SKILL.md 风格稿。群聊历史、群号和引用号不作为请求字段；模型输出固定包装成单一文字段。离线完整表和生成脚本随项目 skill 保存。
+
+机器人服务器的 receive_only/.runtime/deepseek-key 仅 root 和服务组可读。当前实际模型列表提供 deepseek-flash。OpenQQ v0.5.0 对快速响应的等待上限是五秒，模型调用使用四秒总超时并关闭推理模式；失败时引用原消息给一句短提示。回环 /status 提供 ai_ready、ai_requests、ai_failures，计数用于区分本地命令与模型调用。部署代码时一并同步风格稿和 requirements.txt；用 check_offline.py 的模拟模型验证权限、并发去重、超时和引用消息，再用合成短句在隔离接收器验证真实模型。QQ 客户端送达另由授权用户触发。
+
 ## 群权限组与查询（2026-11-24）
 
 当前私有配置以 `groups` 将群号映射到权限组名称，以 `profiles` 将名称映射到功能模块列表。`bot_id` 和 `user_id` 继续绑定机器人和唯一调用者。例如 `"groups": {"20000": "games"}, "profiles": {"games": ["greeting", "little_game"]}` 表示合成测试群只可执行问候和小游戏。真实授权关系保存在服务器的 `.runtime/greeting-access.json`。增加同策略的群只需追加一条绑定，再重启接收服务。要给某群单独设权限，可增加一个权限组并更改该群的绑定。

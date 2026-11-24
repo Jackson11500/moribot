@@ -15,7 +15,8 @@ from nonebot.drivers import Driver, Request, Response
 from nonebot.exception import IgnoredException
 from nonebot.message import event_preprocessor
 
-from legacy_commands import MODULE_LABELS, command_reply, module_names
+from deepseek_dialogue import DeepSeekDialogue, UNAVAILABLE
+from legacy_commands import ASK_MODEL, MODULE_LABELS, command_reply, module_names
 
 
 RUNTIME = Path(__file__).resolve().parent / ".runtime"
@@ -85,7 +86,7 @@ class GreetingAccess:
             and event.anonymous is None
         )
 
-    def reply(self, event: MessageEvent, text: str):
+    def reply(self, event: MessageEvent, text: str, *, mentioned: bool = False):
         group = event.group_id if isinstance(event, GroupMessageEvent) else None
         if text in ("群权限", "群组状态"):
             visible = self.groups if group is None else [group]
@@ -96,12 +97,37 @@ class GreetingAccess:
                 lines.append(f"{title} · {profile}\n已开：{module_names(self.profiles[profile])}")
             return "\n".join(lines)
         modules = None if group is None else self.profiles[self.groups[group]]
-        return command_reply(text, group_modules=modules)
+        return command_reply(text, group_modules=modules, mentioned=mentioned)
+
+
+def addressed_text(event: MessageEvent) -> tuple[str, bool] | None:
+    message = event.original_message
+    if not message:
+        return None
+    if all(part.type == "text" for part in message):
+        return message.extract_plain_text(), False
+    if not isinstance(event, GroupMessageEvent) or event.reply is not None:
+        return None
+    # A real direct mention can precede or follow the command. Keep quoted
+    # messages, other targets and mixed media out of the plain-command path.
+    non_text = [(i, part) for i, part in enumerate(message) if part.type != "text"]
+    if len(non_text) != 1:
+        return None
+    index, target = non_text[0]
+    if target.type != "at" or str(target.data.get("qq")) != str(event.self_id):
+        return None
+    before = message[:index].extract_plain_text().strip()
+    after = message[index + 1:].extract_plain_text().strip()
+    if before and after:
+        return None
+    return before or after, True
 
 
 class ReceiveOnlyAdapter(Adapter):
-    def __init__(self, driver: Driver, access: GreetingAccess | None):
+    def __init__(self, driver: Driver, access: GreetingAccess | None, dialogue: DeepSeekDialogue | None):
         self.access = access
+        self.dialogue = dialogue
+        self.in_flight = set()
         self.recent_commands = deque(maxlen=256)
         self.greeting_responses = 0
         self.command_responses = 0
@@ -126,16 +152,25 @@ class ReceiveOnlyAdapter(Adapter):
         event = self.json_to_event(payload)
         if not isinstance(event, MessageEvent) or not self.access.allows(event):
             return response
-        message = event.original_message
-        if not message or any(segment.type != "text" for segment in message):
+        addressed = addressed_text(event)
+        if addressed is None:
             return response
         key = (event.get_session_id(), event.message_id, event.time)
-        if key in self.recent_commands:
+        if key in self.recent_commands or key in self.in_flight:
             return response
-        text = message.extract_plain_text()
-        reply = self.access.reply(event, text)
+        text, mentioned = addressed
+        reply = self.access.reply(event, text, mentioned=mentioned)
         if reply is None:
             return response
+        if reply is ASK_MODEL:
+            self.in_flight.add(key)
+            try:
+                reply = await self.dialogue.answer(text) if self.dialogue else UNAVAILABLE
+            finally:
+                self.in_flight.discard(key)
+        if isinstance(event, GroupMessageEvent):
+            body = [{"type": "text", "data": {"text": reply}}] if isinstance(reply, str) else reply
+            reply = [{"type": "reply", "data": {"id": str(event.message_id)}}, *body]
         self.recent_commands.append(key)
         self.command_responses += 1
         if text == "茉莉酱":
@@ -147,7 +182,7 @@ class ReceiveOnlyAdapter(Adapter):
         )
 
 
-def start():
+def start(*, model_transport=None):
     secret = (RUNTIME / "post-secret").read_text(encoding="ascii").strip()
     if not secret:
         raise RuntimeError("Empty OneBot HTTP signing secret")
@@ -162,7 +197,11 @@ def start():
         onebot_v11_api_roots={},
     )
     access = GreetingAccess.load(RUNTIME / "greeting-access.json")
-    nonebot.get_driver().register_adapter(ReceiveOnlyAdapter, access=access)
+    dialogue = DeepSeekDialogue.load(RUNTIME, model_transport)
+    driver = nonebot.get_driver()
+    if dialogue:
+        driver.on_shutdown(dialogue.client.aclose)
+    driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue)
     adapter = nonebot.get_adapter(ReceiveOnlyAdapter)
     status = {"events": 0, "messages": 0, "last_event_utc": None}
 
@@ -182,6 +221,9 @@ def start():
             "greeting_enabled": access is not None,
             "greeting_responses": adapter.greeting_responses,
             "command_responses": adapter.command_responses,
+            "ai_ready": dialogue is not None,
+            "ai_requests": dialogue.requests if dialogue else 0,
+            "ai_failures": dialogue.failures if dialogue else 0,
         }
 
     # OpenQQ executes quick replies from this signed event's response.
