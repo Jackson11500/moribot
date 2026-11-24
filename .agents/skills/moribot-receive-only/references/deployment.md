@@ -1,5 +1,13 @@
 # 部署与排障记录
 
+## 群聊日报出图（2026-11-24）
+
+群内「日报」通过 OneBot 快速回复返回一张纵向 PNG，文字回查用「日报详情 YYYY-MM-DD」。跨群查询的详情指令保留目标群号。两种输出共用同一份按账号去重的统计。茉莉手记只使用这份统计中的数字与时刻，在本机生成。定时服务通过项目 venv 写入私有的同名 PNG 和 Markdown，CLI 默认输出文字。
+
+Windows 使用微软雅黑，Linux 使用文泉驿正黑。排查图片时运行 `receive_only/check_daily.py`、`receive_only/check_offline.py`，再用服务账号直接调用已安装的 `run_query`。验证回复能解码为 PNG、完整响应小于 1 MiB，并在 3.3 秒内返回。正式归档实测约 0.18 秒、编码后约 264 KiB。发布时保持 OpenQQ 在线，重启接收器加载查询代码。隔离验收与正式数据只读出图均可在服务器上完成。
+
+首次同时启动接收器和日报服务时，定时任务在第一次读库时报 `sqlite3.OperationalError: unable to open database file`。接收器就绪后确认 SQLite 的 WAL、SHM 均已存在，原口径只读查询即成功。部署时先等回环 `/status` 就绪再启动日报单元；定时单元失败后每 5 秒重试，2 分钟内最多启动三次。昨日没有上报时生成零份属于正常结果，可另选有消息的一天在临时私有目录验证两种文件。
+
 ## 群内管理入口（2026-11-24）
 
 「查看指令」按实际权限显示菜单。私有配置中的 `admin_group_id` 必须是已启用 `group_reports` 的一个群；保持 `user_id` 为唯一调用者。接收器同时核对签名、机器人身份、发送者账号、管理群、普通非匿名群消息。共享模块配置的其他群不继承管理权，私聊也不取得跨群权。旧配置未设置管理群时仍沿用本群范围。
@@ -18,7 +26,7 @@ Windows 与 Linux 已验证同权限组不同来源群、群主身份的其他�
 
 用 `moribot-daily` 查今天，指定 `--group` 和 `--date` 可复算历史。阅读者拿日报中的本地编号执行 `moribot-messages --id 42 --jsonl` 回查原始事件。系统按群和北京时间从只读归档统计，参与者按 QQ 去重。比较小时消息数和十分钟发言人数时，注意两者的单位不同。匿名发言、跨日引用和混合消息段的计数口径见[模板对照与日报说明](../../../../docs/group-daily-report.md)。
 
-独立的 `moribot-daily.timer` 在北京时间 00:10 调用同名 service，运行身份为 `moribot-qq`，无网络，逐群原子写入 `/var/lib/moribot-daily`。目录 0700，文件 0600。查看下次运行用 `systemctl show moribot-daily.timer -p NextElapseUSecRealtime`；查看最近一次结果用 `systemctl show moribot-daily.service -p Result`。服务补唤醒时计算当时的昨日，多日缺失可按日期以服务账号重算。部署时核对消息查看器已有版本以及可执行权限。修改日报无需重启 OpenQQ 或接收器。已通过两端的 `receive_only/check_daily.py`、生产 service 启动和服务账号读取当日正式数据并写入临时日报的验证。
+独立的 `moribot-daily.timer` 在北京时间 00:10 调用同名 service，运行身份为 `moribot-qq`，无网络，逐群原子写入 `/var/lib/moribot-daily`。目录 0700，文件 0600。查看下次运行用 `systemctl show moribot-daily.timer -p NextElapseUSecRealtime`；查看最近一次结果用 `systemctl show moribot-daily.service -p Result`。服务补唤醒时计算当时的昨日，多日缺失可按日期以服务账号重算。部署时核对消息查看器已有版本以及可执行权限。只修改定时服务的独立入口时，可单独启动日报单元验证。已通过两端的 `receive_only/check_daily.py`、生产 service 启动和服务账号读取当日正式数据并写入临时日报的验证。
 
 ## 长期群消息归档（2026-11-24）
 

@@ -158,7 +158,9 @@ def check(greeting_enabled=False):
                 with reply:
                     assert reply.status == expected_code, (reply.status, expected_code)
                     if reply.status == 200:
-                        operation = json.load(reply)
+                        raw = reply.read()
+                        assert len(raw) < 1024 * 1024
+                        operation = json.loads(raw)
                         assert set(operation) == {"reply", "at_sender", "auto_escape"}
                         assert operation["at_sender"] is False and operation["auto_escape"] is True
                         result = operation["reply"]
@@ -409,9 +411,19 @@ def check(greeting_enabled=False):
                 assert "周六" in command(group, f"查记录 #{local['id']}")
                 assert "本群没有" in command(group, f"查记录 #{foreign['id']}")
                 assert "本群没有" in command(group, f"查记录 #{private_rows[0]['id']}")
-                assert "北京时间" in mention(group, [bot_at, words(" 日报")], True)
-                assert "信息日报" in command(group, "昨日日报")
-                assert "暂无符合条件" in command(group, "日报 2025-06-02")
+                def chart_reply(result, expected):
+                    caption, picture = result
+                    assert expected in caption["data"]["text"] and "日报详情" in caption["data"]["text"]
+                    assert picture["type"] == "image"
+                    encoded = picture["data"]["file"]
+                    assert encoded.startswith("base64://")
+                    with Image.open(BytesIO(base64.b64decode(encoded[9:], validate=True))) as chart:
+                        assert chart.format == "PNG" and chart.width == 900 and chart.height > 1000
+                        chart.verify()
+                chart_reply(mention(group, [bot_at, words(" 日报")], True), "群 20000")
+                chart_reply(command(group, "昨日日报"), "群 20000")
+                chart_reply(command(group, "日报 2025-06-02"), "0 条群消息")
+                assert "暂无符合条件" in command(group, "日报详情 2025-06-02")
                 assert "请输入" in command(group, "日报 2025-02-30")
                 assert "请输入" in command(group, "查记录 #9999999999999999999")
                 for denied in (private, second_group, dict(group, group_id=20001),
@@ -425,7 +437,8 @@ def check(greeting_enabled=False):
                 assert "管理群专用" not in command(group, "查看指令")
                 assert "20100" in command(admin, "群列表")
                 assert "群 20000" in command(admin, "群权限")
-                assert "群 20100" in command(admin, "群 20100 日报 2025-06-02")
+                chart_reply(command(admin, "群 20100 日报 2025-06-02"), "群 20100 · 2025-06-02 · 1 条群消息")
+                assert "合成群友" in command(admin, "群 20100 日报详情 2025-06-02")
                 assert "群 20100消息统计" in command(admin, "群20100 消息统计")
                 assert "合成群友" in mention(admin, [bot_at, words(" 群 20100 最近消息")], True)
                 assert "他群同号消息" in command(admin, f"查记录 #{foreign['id']}")
@@ -445,7 +458,7 @@ def check(greeting_enabled=False):
                 stranger = dict(admin, user_id=30004, sender={"user_id": 30004, "role": "owner"})
                 command(stranger, f"查记录 #{foreign['id']}", False)
                 command(stranger, "查看指令", False)
-                for restricted in ("群列表", "群 20100 最近消息", "模型记录", "我的私聊"):
+                for restricted in ("群列表", "群 20100 日报", "群 20100 日报详情", "群 20100 最近消息", "模型记录", "我的私聊"):
                     command(group, restricted, False)
                     command(private, restricted, False)
                     command(stranger, restricted, False)

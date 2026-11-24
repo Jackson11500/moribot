@@ -6,6 +6,9 @@ import subprocess
 import sys
 import tempfile
 
+from PIL import Image
+
+from daily_report import collect_day
 from message_archive import LOCAL_TIME, MessageArchive
 
 
@@ -38,6 +41,22 @@ def main():
             add(6, 4000, 10000, "茉莉自己发的", post_type="message_sent")
             add(7, 86400, 30011, "次日数据")
             add(8, 1200, 30012, "好友私聊", message_type="private", sub_type="friend")
+            cutoff = datetime.fromtimestamp(start + 1500, LOCAL_TIME)
+            partial = collect_day(archive.db, 20000, cutoff.date(), start, int(cutoff.timestamp()) + 1, cutoff, bot_id=10000)
+            assert partial.hours == [4] + [0] * 23 and partial.peak_hours == [0]
+            assert partial.ranking == [(30000, 2), (30001, 1), (30002, 1)]
+            assert partial.peak_people == 2 and "4 条" in partial.mori_note() and "2 个账号" in partial.mori_note()
+            other_bot = add(9, 7200, 30012, "跨机器人统计测试", self_id=10001)
+            assert other_bot and collect_day(archive.db, 20000, cutoff.date(), start, start + 86400,
+                                             cutoff, bot_id=10000).total == 5
+            other = collect_day(archive.db, 20000, cutoff.date(), start, start + 86400, cutoff, bot_id=10001)
+            assert other.total == 1 and "2 点" in other.mori_note()
+            add(10, 10800, 30012, "并列时段", self_id=10001)
+            tied = collect_day(archive.db, 20000, cutoff.date(), start, start + 86400, cutoff, bot_id=10001)
+            assert tied.peak_hours == [2, 3] and "2 点和 3 点各有 1 条" in tied.mori_note()
+            # Remove just these two synthetic rows before testing the all-bot CLI.
+            with archive.db:
+                archive.db.execute("DELETE FROM messages WHERE bot=10001")
         finally:
             archive.db.close()
         cli = [sys.executable, "-X", "utf8", str(Path(__file__).with_name("daily_report.py")),
@@ -53,9 +72,11 @@ def main():
         saved = root / "reports"
         for _ in range(2):
             subprocess.run([*cli, "--save", str(saved)], check=True, stdout=subprocess.DEVNULL)
-        files = list(saved.iterdir())
-        assert [p.name for p in files] == ["2025-06-02-20000.md"]
-        assert "原文归档" in files[0].read_text(encoding="utf-8")
+        assert sorted(p.name for p in saved.iterdir()) == ["2025-06-02-20000.md", "2025-06-02-20000.png"]
+        assert "原文归档" in (saved / "2025-06-02-20000.md").read_text(encoding="utf-8")
+        with Image.open(saved / "2025-06-02-20000.png") as chart:
+            assert chart.format == "PNG" and chart.width == 900 and chart.height > chart.width
+            chart.verify()
         viewer = Path(__file__).with_name("message_archive.py")
         detail = subprocess.check_output([sys.executable, "-X", "utf8", str(viewer), "--db", str(path),
                                           "--id", str(old), "--jsonl"], encoding="utf-8")

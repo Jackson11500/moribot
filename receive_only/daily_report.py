@@ -4,6 +4,7 @@
 import argparse
 from collections import Counter, deque
 from contextlib import closing
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from html import escape
 import json
@@ -17,6 +18,8 @@ from message_archive import DEFAULT_DB, LOCAL_TIME
 
 CQ = re.compile(r"\[CQ:([\w-]+)((?:,[^\]]*)?)\]")
 URL = re.compile(r"""https?://[^\s<>"'\[\]，。！？、；（）【】《》]+""", re.I)
+MESSAGE_TYPES = (("text", "文字"), ("image", "图"), ("face", "QQ 表情"),
+                 ("record", "语音"), ("video", "视频"), ("file", "文件"))
 
 
 def unescape_cq(value):
@@ -53,7 +56,53 @@ def excerpt(parts):
     return label(content[:90]) + ("…" if len(content) > 90 else "")
 
 
-def report(db, group, day, start, end, as_of, *, bot_id=None):
+@dataclass
+class GroupDay:
+    group: int
+    day: date
+    as_of: datetime
+    total: int
+    anonymous: int
+    chars: int
+    hours: list[int]
+    ranking: list[tuple[int, int]]
+    names: dict
+    types: Counter
+    quoted: int
+    person_mentions: int
+    everyone: int
+    peak_people: int
+    peak_end: int | None
+    quote_lines: list[str]
+    link_lines: list[str]
+
+    @property
+    def peak_hours(self):
+        high = max(self.hours)
+        return [h for h, n in enumerate(self.hours) if n and n == high]
+
+    def mori_note(self):
+        if not self.total:
+            return "咱翻了翻，这一天的群聊档案还是空的。"
+        if self.total == 1:
+            return f"翻到啦，{self.peak_hours[0]} 点那一条，就是咱这天收下的全部消息。"
+        high = max(self.hours)
+        peaks = self.peak_hours
+        if len(peaks) == 1:
+            first = f"{peaks[0]} 点那一栏最高，咱数到了 {high} 条。"
+        elif len(peaks) == 2:
+            first = f"{peaks[0]} 点和 {peaks[1]} 点各有 {high} 条，咱给它们并排画了个第一。"
+        else:
+            first = f"咱数了两遍，有 {len(peaks)} 个时段并列第一，每小时都是 {high} 条。"
+        if self.peak_people >= 2:
+            until = datetime.fromtimestamp(self.peak_end, LOCAL_TIME)
+            return first + f"再看 {until:%H:%M}，往前十分钟就有 {self.peak_people} 个账号冒过泡啦。"
+        if self.types["image"]:
+            return first + f"咱还翻到 {self.types['image']} 条带图的消息。"
+        return first
+
+
+def collect_day(db, group, day, start, end, as_of, *, bot_id=None):
     total = anonymous = chars = person_mentions = everyone = quoted = 0
     hours = [0] * 24
     members, types, links, citations = Counter(), Counter(), Counter(), Counter()
@@ -113,32 +162,7 @@ def report(db, group, day, start, end, as_of, *, bot_id=None):
             links[url] += 1
             link_sources.setdefault(url, row_id)
 
-    lines = [f"# 群 {group} · {day} 信息日报", "",
-             f"统计依据为已归档群消息。生成于北京时间 {as_of:%Y-%m-%d %H:%M}。", "",
-             f"群消息 **{total} 条**，可识别发言账号 **{len(members)} 个**，匿名消息 {anonymous} 条，正文 {chars} 字符。"]
-    if not total:
-        lines.append("这一天暂无符合条件的归档消息。")
-        return "\n".join(lines) + "\n"
-    high = max(hours)
-    peaks = "、".join(f"{h:02d} 时" for h, n in enumerate(hours) if n == high)
-    lines += ["", "## 活跃时段", "", f"发言高峰为 {peaks}，每小时 {high} 条。"]
-    if peak_end is not None:
-        until = datetime.fromtimestamp(peak_end, LOCAL_TIME)
-        lines.append(f"10 分钟内最多有 {peak_people} 个账号发言，首次达到峰值是在 {until:%H:%M:%S}。")
-    lines += ["", "小时分布（北京时间，仅列有消息的时段）", "",
-              " · ".join(f"{h:02d} 时 {n} 条" for h, n in enumerate(hours) if n),
-              "", "## 发言排行", ""]
-    for uid, n in sorted(members.items(), key=lambda pair: (-pair[1], pair[0]))[:10]:
-        display = label(names.get(uid, "未上报名片或昵称"))
-        lines.append(f"- {display}（QQ {uid}）　{n} 条，占全部群消息 {n / total:.1%}")
-    if not members:
-        lines.append("当日仅有匿名发言。")
-    lines += ["", "## 消息与互动", "",
-              " · ".join(f"{title} {types[kind]} 条" for kind, title in
-                         (("text", "含文字"), ("image", "含图"), ("face", "含 QQ 表情"),
-                          ("record", "含语音"), ("video", "含视频"), ("file", "含文件"))),
-              "", f"引用消息 {quoted} 条，定向 @ {person_mentions} 人次，@全体 {everyone} 条。",
-              "", "## 被引用的消息", ""]
+    quote_lines = []
     for (bot, target), n in sorted(citations.items(), key=lambda pair: (-pair[1], first_quote[pair[0]]))[:5]:
         stamp, first_id = first_quote[(bot, target)]
         originals = db.execute("""SELECT id,event FROM messages WHERE bot=? AND kind='group' AND chat=?
@@ -146,27 +170,52 @@ def report(db, group, day, start, end, as_of, *, bot_id=None):
         if len(originals) == 1:
             original_id, raw = originals[0]
             quote = excerpt(segments(json.loads(raw).get("message")))
-            lines.append(f"- {n} 条消息引用 · 原文归档 #{original_id} · {quote}")
+            quote_lines.append(f"- {n} 条消息引用 · 原文归档 #{original_id} · {quote}")
         else:
-            lines.append(f"- {n} 条消息引用 · 消息号 {label(target)} · 原文无法唯一定位，可查引用方归档 #{first_id}")
-    if not citations:
-        lines.append("当天没有带引用的消息。")
-    lines += ["", "## 群内分享的链接", ""]
-    for url, n in sorted(links.items(), key=lambda pair: (-pair[1], link_sources[pair[0]], pair[0]))[:5]:
-        lines.append(f"- <{url}> · {n} 条消息分享 · 首见归档 #{link_sources[url]}")
-    if not links:
-        lines.append("当天文字消息中未发现 HTTP 或 HTTPS 链接。")
+            quote_lines.append(f"- {n} 条消息引用 · 消息号 {label(target)} · 原文无法唯一定位，可查引用方归档 #{first_id}")
+    link_lines = [f"- <{url}> · {n} 条消息分享 · 首见归档 #{link_sources[url]}"
+                  for url, n in sorted(links.items(), key=lambda pair: (-pair[1], link_sources[pair[0]], pair[0]))[:5]]
+    return GroupDay(group, day, as_of, total, anonymous, chars, hours,
+                    sorted(members.items(), key=lambda pair: (-pair[1], pair[0])), names, types,
+                    quoted, person_mentions, everyone, peak_people, peak_end, quote_lines, link_lines)
+
+
+def markdown(s):
+    lines = [f"# 群 {s.group} · {s.day} 信息日报", "",
+             f"统计依据为已归档群消息。生成于北京时间 {s.as_of:%Y-%m-%d %H:%M}。", "",
+             f"群消息 **{s.total} 条**，可识别发言账号 **{len(s.ranking)} 个**，匿名消息 {s.anonymous} 条，正文 {s.chars} 字符。",
+             "", f"茉莉手记　{s.mori_note()}"]
+    if not s.total:
+        return "\n".join([*lines, "这一天暂无符合条件的归档消息。"]) + "\n"
+    peaks = "、".join(f"{h:02d} 时" for h in s.peak_hours)
+    lines += ["", "## 活跃时段", "", f"发言高峰为 {peaks}，每小时 {max(s.hours)} 条。"]
+    if s.peak_end is not None:
+        until = datetime.fromtimestamp(s.peak_end, LOCAL_TIME)
+        lines.append(f"10 分钟内最多有 {s.peak_people} 个账号发言，首次达到峰值是在 {until:%H:%M:%S}。")
+    lines += ["", "小时分布（北京时间，仅列有消息的时段）", "",
+              " · ".join(f"{h:02d} 时 {n} 条" for h, n in enumerate(s.hours) if n),
+              "", "## 发言排行", ""]
+    for uid, n in s.ranking[:10]:
+        display = label(s.names.get(uid, "未上报名片或昵称"))
+        lines.append(f"- {display}（QQ {uid}）　{n} 条，占全部群消息 {n / s.total:.1%}")
+    if not s.ranking:
+        lines.append("当日仅有匿名发言。")
+    lines += ["", "## 消息与互动", "",
+              " · ".join(f"含{' ' if kind == 'face' else ''}{title} {s.types[kind]} 条" for kind, title in MESSAGE_TYPES),
+              "", f"引用消息 {s.quoted} 条，定向 @ {s.person_mentions} 人次，@全体 {s.everyone} 条。",
+              "", "## 被引用的消息", "", *(s.quote_lines or ["当天没有带引用的消息。"]),
+              "", "## 群内分享的链接", "", *(s.link_lines or ["当天文字消息中未发现 HTTP 或 HTTPS 链接。"])]
     return "\n".join(lines) + "\n"
 
 
-def save_report(folder, day, group, content):
+def save_report(folder, name, content):
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
     tmp = tempfile.NamedTemporaryFile(dir=folder, delete=False)
     staging = Path(tmp.name)
     try:
         with tmp:
-            tmp.write(content.encode("utf-8"))
-        staging.replace(folder / f"{day}-{group}.md")
+            tmp.write(content)
+        staging.replace(folder / name)
     finally:
         staging.unlink(missing_ok=True)
 
@@ -193,11 +242,14 @@ def main():
             """SELECT DISTINCT chat FROM messages WHERE kind='group' AND sent_at>=? AND sent_at<?
                ORDER BY chat""", (start, end))]
         for group in groups:
-            content = report(db, group, day, start, end, as_of)
+            stats = collect_day(db, group, day, start, end, as_of)
             if args.save:
-                save_report(args.save, day, group, content)
+                from daily_chart import render_png
+                png = render_png(stats)
+                save_report(args.save, f"{day}-{group}.png", png)
+                save_report(args.save, f"{day}-{group}.md", markdown(stats).encode("utf-8"))
             else:
-                print(content)
+                print(markdown(stats))
         if args.save:
             print(f"{day} 已生成 {len(groups)} 份群日报。")
         elif not groups:
