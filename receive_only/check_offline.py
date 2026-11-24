@@ -7,6 +7,7 @@ import hashlib
 import hmac
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import secrets
 import socket
@@ -20,7 +21,10 @@ from urllib.request import ProxyHandler, Request, build_opener
 from PIL import Image, ImageChops
 import httpx
 import deepseek_dialogue
+import dialogue_context
 from deepseek_dialogue import MODEL, UNAVAILABLE
+from dialogue_context import RecentMessages
+from dialogue_log import DialogueLog, read_calls
 from legacy_commands import ASSETS, GREETING, MISSING, MODULE_LABELS, PUZZLES
 
 
@@ -31,7 +35,8 @@ async def fake_model(request):
     system, user = body["messages"]
     assert body["model"] == MODEL and system["role"] == "system" and "用茉莉的口吻接话" in system["content"]
     assert user["role"] == "user"
-    if user["content"] == "模拟失败":
+    context = json.loads(user["content"])
+    if context["current"]["text"] == "模拟失败":
         return httpx.Response(503)
     await asyncio.sleep(0.15)
     return httpx.Response(200, json={"choices": [{
@@ -41,12 +46,18 @@ async def fake_model(request):
 
 async def check_model_timeout():
     from unittest.mock import patch
-    with patch.object(deepseek_dialogue, "MODEL_TIMEOUT", 0.01):
-        model = deepseek_dialogue.DeepSeekDialogue("offline-test", "用茉莉的口吻接话", httpx.MockTransport(fake_model))
+    with tempfile.TemporaryDirectory() as tmp, patch.object(deepseek_dialogue, "MODEL_TIMEOUT", 0.01):
+        path = Path(tmp) / "calls.sqlite3"
+        model = deepseek_dialogue.DeepSeekDialogue("offline-test", "用茉莉的口吻接话", DialogueLog(path),
+                                                  httpx.MockTransport(fake_model))
         try:
-            assert await model.answer("模拟慢回复") == UNAVAILABLE and model.failures == 1
+            context = {"current": {"text": "模拟慢回复"}, "quote": None}
+            assert await model.answer(context, {}, None) == UNAVAILABLE and model.failures == 1
+            row, = read_calls(path)
+            assert row["status"] == "timeout" and row["http_status"] is None and row["reply"] == UNAVAILABLE
         finally:
             await model.client.aclose()
+            await model.close_journal()
 
 
 def check(greeting_enabled=False):
@@ -74,11 +85,14 @@ def check(greeting_enabled=False):
         code = (
             "from pathlib import Path; import receiver, sys; "
             "receiver.RUNTIME = Path(sys.argv[1]); receiver.PORT = int(sys.argv[2]); "
-            "from check_offline import fake_model; import httpx; "
+            "from check_offline import fake_model, stop_on_eof; import httpx, threading; "
+            "threading.Thread(target=stop_on_eof, daemon=True).start(); "
             "receiver.start(model_transport=httpx.MockTransport(fake_model))"
         )
         process = subprocess.Popen(
-            [sys.executable, "-c", code, directory, str(port)], cwd=Path(__file__).parent
+            [sys.executable, "-c", code, directory, str(port)], cwd=Path(__file__).parent,
+            stdin=subprocess.PIPE,
+            env={**os.environ, "STATE_DIRECTORY": str(Path(directory) / "dialogue")},
         )
         try:
             for _ in range(100):
@@ -213,7 +227,6 @@ def check(greeting_enabled=False):
                           [bot_at, at("30001"), words("游戏")], [bot_at, bot_at, words("游戏")],
                           [words("游"), bot_at, words("戏")], [words("@茉莉 游戏")],
                           [words("[CQ:at,qq=10000]游戏")],
-                          [{"type": "reply", "data": {"id": "10"}}, *addressed],
                           [bot_at, {"type": "image", "data": {"file": "test.jpg"}}]):
                 mention(group, parts)
             mention(private, addressed)
@@ -244,6 +257,45 @@ def check(greeting_enabled=False):
                     post(payload)
                     assert future.result() == "模拟对白 [CQ:at,qq=all]"
                 assert mention(group, [bot_at, words(" 模拟失败")], True) == UNAVAILABLE
+
+            # Identical message IDs in another group cannot supply this group's quotation.
+            original = dict(group, message_id=700, user_id=30004, message=[words("周六\n下午三点")],
+                            raw_message="周六\n下午三点", sender={"nickname": "小禾", "user_id": 30004},
+                            extra_test_field="完整上报")
+            post(original)
+            post(dict(original, group_id=20003, message=[words("他群同号消息")]))
+            quoted = {"type": "reply", "data": {"id": "700"}}
+            speaker = dict(group, sender={"user_id": 30000, "nickname": "栗子", "card": "阿栗", "role": "member"})
+            question = [quoted, at("30004"), words(" "), bot_at, words(" 我记成周日了？")]
+            mention(speaker, question, True)
+            mention(group, [quoted, bot_at, words(" 游戏")], True)
+            mention(group, [quoted, words("没叫茉莉")])
+            mention(group, [quoted, at("30099"), bot_at, words("错误目标")])
+            mention(group, [quoted, quoted, bot_at, words("两个引用")])
+            mention(group, [{"type": "reply", "data": {"id": "99999"}}, bot_at, words(" 原话呢")], True)
+            if greeting_enabled:
+                path = Path(directory) / "dialogue/calls.sqlite3"
+                records = list(read_calls(path))
+                assert len(records) == 5
+                missing, found, failure = records[:3]
+                assert found["event"]["message"] == question and found["quote_event"] == original
+                ctx = json.loads(found["request"]["messages"][-1]["content"])
+                assert ctx["current"]["sender"] == {"user_id": 30000, "nickname": "栗子", "group_card": "阿栗",
+                                                    "display_name": "阿栗", "role": "member"}
+                assert ctx["current"]["text"] == "我记成周日了？" and ctx["current"]["group_id"] == 20000
+                assert ctx["quote"]["text"] == "周六\n下午三点" and ctx["quote"]["sender"]["display_name"] == "小禾"
+                assert ctx["quote"]["status"] == "resolved" and ctx["quote"]["message_id"] == 700
+                assert json.loads(missing["request"]["messages"][-1]["content"])["quote"]["status"] == "unavailable"
+                assert missing["quote_event"] is None and found["finished"] and found["status"] == "ok"
+                assert json.loads(found["response_body"])["choices"][0]["message"]["content"] == found["reply"]
+                assert failure["http_status"] == 503 and failure["status"] == "error" and failure["reply"] == UNAVAILABLE
+                assert "offline-test" not in json.dumps(records)
+                viewer = subprocess.check_output([sys.executable, "-X", "utf8", str(Path(__file__).with_name("dialogue_log.py")),
+                                                  "--db", str(path), "--id", str(found["id"])], encoding="utf-8")
+                assert json.loads(viewer) == found
+                listing = subprocess.check_output([sys.executable, "-X", "utf8", str(Path(__file__).with_name("dialogue_log.py")),
+                                                   "--db", str(path), "--limit", "2"], encoding="utf-8")
+                assert "小禾：周六\n下午三点" in listing and "阿栗：我记成周日了？" in listing
 
             for text in ("24点", "鲁迅说：测试", "颜色大全", "签到"):
                 command(private, text, False)
@@ -298,20 +350,35 @@ def check(greeting_enabled=False):
             final = status()
             assert final["greeting_enabled"] is greeting_enabled
             assert final["greeting_responses"] == (3 if greeting_enabled else 0)
-            assert final["command_responses"] == (13 + len(replies) if greeting_enabled else 0)
+            assert final["command_responses"] == (16 + len(replies) if greeting_enabled else 0)
             assert final["ai_ready"] is greeting_enabled
-            assert final["ai_requests"] == (3 if greeting_enabled else 0)
+            assert final["ai_requests"] == (5 if greeting_enabled else 0)
             assert final["ai_failures"] == (1 if greeting_enabled else 0)
             print("PASS: scoped text, image rendering, missing assets, and duplicate delivery")
         finally:
-            process.terminate()
-            process.wait(timeout=5)
+            process.stdin.close()
+            process.wait(timeout=10)
+
+
+def stop_on_eof():
+    # Stop the actual test server, including when a Windows venv launcher wraps it.
+    import _thread
+    sys.stdin.buffer.read()
+    _thread.interrupt_main()
 
 
 if __name__ == "__main__":
     from receiver import GreetingAccess
+    from unittest.mock import patch
 
     asyncio.run(check_model_timeout())
+    recent = RecentMessages()
+    with patch.object(dialogue_context, "monotonic", return_value=0):
+        for n in range(257):
+            recent.remember({"group_id": 20000, "message_id": n, "message": "示例"})
+        assert recent.get(20000, "0") is None and recent.get(20000, "1") is not None
+    with patch.object(dialogue_context, "monotonic", return_value=1800):
+        assert recent.get(20000, "1") is None
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "access.json"

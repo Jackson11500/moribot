@@ -2,11 +2,17 @@
 
 ## 双向 @、引用与 DeepSeek（2026-11-24）
 
-签名 HTTP 快速回复读取原始消息段。旧的全为 text 检查会忽略 OpenQQ 的 at 段。现在接受群内文字开头或结尾的单个 at，目标与事件中的机器人身份一致才继续。用户、群、模块照常校验。引用、其他目标、全体和混合媒体不会启动智能对话。群回复首段使用 reply，id 取当前入站 message_id；后接普通文字段或图片段。at_sender 控制回 @ 发送者，与引用不同，当前保持 false。
+在获准群内，读取原始 OneBot 消息段，识别放在文字开头或末尾的机器人 @。有引用时先读开头的 `reply` 段。QQ 有时会同时带上对原作者的 @，用缓存中的作者核对这个目标，再识别对茉莉的 @。先匹配指令及其模块权限，只有授权用户在启用 `ai_dialogue` 的群中 @ 茉莉且未命中指令，才调用模型。返回的第一段 `reply` 指向本次提问，后接文字或图片，`at_sender` 为 false。
 
-配置中的 ai_dialogue 单独控制智能对话。已匹配指令（含别名、缺图分支）按其原模块分派；关闭的指令保持静默。仅将授权本人主动 @ 的本条自由文本交给 DeepSeek，使用服务器上的 .agents/skills/moribot-dialogue/SKILL.md 风格稿。群聊历史、群号和引用号不作为请求字段；模型输出固定包装成单一文字段。离线完整表和生成脚本随项目 skill 保存。
+引用缓存按群号、消息号查找，每个启用 AI 的群最多保留最近收到的 256 条普通消息，查找窗口 30 分钟。接收器重启后重新积累。OpenQQ 未上报的机器人回复也可能只有引用号。保留现有上报连接即可，接收器不查询历史消息。校验原始事件时对副本调用 `json_to_event`，否则适配器会将 `original_message` 加到要存档的原始数据里。
 
-机器人服务器的 receive_only/.runtime/deepseek-key 仅 root 和服务组可读。当前实际模型列表提供 deepseek-flash。OpenQQ v0.5.0 对快速响应的等待上限是五秒，模型调用使用四秒总超时并关闭推理模式；失败时引用原消息给一句短提示。回环 /status 提供 ai_ready、ai_requests、ai_failures，计数用于区分本地命令与模型调用。部署代码时一并同步风格稿和 requirements.txt；用 check_offline.py 的模拟模型验证权限、并发去重、超时和引用消息，再用合成短句在隔离接收器验证真实模型。QQ 客户端送达另由授权用户触发。
+模型直接读取项目 `.agents/skills/moribot-dialogue/SKILL.md` 正文。请求中的 `current` 和 `quote` 各自带有文本、独立的作者信息、时间和消息标识。称呼按群名片、昵称顺序取值。引用不可解析时带引用号和 `unavailable`。模型回复封装为一个普通文字段。
+
+服务通过 `StateDirectory=moribot-dialogue` 创建服务账号专属的 0700 目录。每次模型请求开始前写入 `/var/lib/moribot-dialogue/calls.sqlite3`（0600），结束后补 HTTP 状态、完整响应、回复及错误。进行中或强制中止的请求可能停在 `started`。本机通过 `ssh moribot-openqq moribot-dialogues` 查看近期对话，用 `--id 1` 查看指定编号的完整 JSON。上线前仅有计数可查。数据库只留在服务器，测试进程显式设置临时 `STATE_DIRECTORY`。
+
+OpenQQ v0.5.0 的 HTTP 快速回复等待五秒。当前使用 `deepseek-flash`、关闭推理、整次模型调用限四秒，超时时回复短提示。服务器密钥位于 `receive_only/.runtime/deepseek-key`。回环 `/status` 提供 `ai_ready`、`ai_requests`、`ai_failures`。在独立端口用 `check_offline.py` 检查两名作者、跨群同号、引用缺失、日志成功与失败记录及只读查看器。Windows 虚拟环境可能由启动器包装子进程，通过关闭测试进程的标准输入让实际接收器正常退出并释放 SQLite 文件。
+
+本次在 Windows 和 Linux 跑通隔离回归。Linux 临时库另外记录了一次真实模型调用，模型正确区分两个合成昵称，并从引用中取回提问未提及的暗号。上线后核对七个部署文件的哈希、服务账号与库权限、查看命令和两个服务的状态。只重启了接收器，OpenQQ 的 PID 和启动时间均一致。
 
 ## 群权限组与查询（2026-11-24）
 

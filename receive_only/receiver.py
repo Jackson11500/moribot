@@ -1,6 +1,7 @@
 """Receive signed OneBot events and answer commands in allowlisted conversations."""
 
 from collections import deque
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -16,6 +17,7 @@ from nonebot.exception import IgnoredException
 from nonebot.message import event_preprocessor
 
 from deepseek_dialogue import DeepSeekDialogue, UNAVAILABLE
+from dialogue_context import RecentMessages, addressed_text, model_context
 from legacy_commands import ASK_MODEL, MODULE_LABELS, command_reply, module_names
 
 
@@ -100,34 +102,12 @@ class GreetingAccess:
         return command_reply(text, group_modules=modules, mentioned=mentioned)
 
 
-def addressed_text(event: MessageEvent) -> tuple[str, bool] | None:
-    message = event.original_message
-    if not message:
-        return None
-    if all(part.type == "text" for part in message):
-        return message.extract_plain_text(), False
-    if not isinstance(event, GroupMessageEvent) or event.reply is not None:
-        return None
-    # A real direct mention can precede or follow the command. Keep quoted
-    # messages, other targets and mixed media out of the plain-command path.
-    non_text = [(i, part) for i, part in enumerate(message) if part.type != "text"]
-    if len(non_text) != 1:
-        return None
-    index, target = non_text[0]
-    if target.type != "at" or str(target.data.get("qq")) != str(event.self_id):
-        return None
-    before = message[:index].extract_plain_text().strip()
-    after = message[index + 1:].extract_plain_text().strip()
-    if before and after:
-        return None
-    return before or after, True
-
-
 class ReceiveOnlyAdapter(Adapter):
     def __init__(self, driver: Driver, access: GreetingAccess | None, dialogue: DeepSeekDialogue | None):
         self.access = access
         self.dialogue = dialogue
         self.in_flight = set()
+        self.recent_messages = RecentMessages()
         self.recent_commands = deque(maxlen=256)
         self.greeting_responses = 0
         self.command_responses = 0
@@ -147,25 +127,32 @@ class ReceiveOnlyAdapter(Adapter):
         payload = json.loads(request.content)
         if not isinstance(payload, dict) or payload.get("post_type") != "message":
             return response
-        if str(payload.get("user_id")) != str(self.access.user_id):
-            return response
-        event = self.json_to_event(payload)
+        # Adapter validation adds original_message to its input dictionary.
+        event = self.json_to_event(deepcopy(payload))
+        if (isinstance(event, GroupMessageEvent) and event.self_id == self.access.bot_id
+                and event.group_id in self.access.groups and event.sub_type == "normal"
+                and event.anonymous is None and "ai_dialogue" in self.access.profiles[self.access.groups[event.group_id]]):
+            self.recent_messages.remember(payload)
         if not isinstance(event, MessageEvent) or not self.access.allows(event):
             return response
-        addressed = addressed_text(event)
+        addressed = addressed_text(event, self.recent_messages)
         if addressed is None:
             return response
         key = (event.get_session_id(), event.message_id, event.time)
         if key in self.recent_commands or key in self.in_flight:
             return response
-        text, mentioned = addressed
+        text, mentioned, quote_id, source = addressed
         reply = self.access.reply(event, text, mentioned=mentioned)
         if reply is None:
             return response
         if reply is ASK_MODEL:
             self.in_flight.add(key)
             try:
-                reply = await self.dialogue.answer(text) if self.dialogue else UNAVAILABLE
+                if self.dialogue:
+                    context = model_context(payload, text, quote_id, source)
+                    reply = await self.dialogue.answer(context, payload, source)
+                else:
+                    reply = UNAVAILABLE
             finally:
                 self.in_flight.discard(key)
         if isinstance(event, GroupMessageEvent):
@@ -201,6 +188,7 @@ def start(*, model_transport=None):
     driver = nonebot.get_driver()
     if dialogue:
         driver.on_shutdown(dialogue.client.aclose)
+        driver.on_shutdown(dialogue.close_journal)
     driver.register_adapter(ReceiveOnlyAdapter, access=access, dialogue=dialogue)
     adapter = nonebot.get_adapter(ReceiveOnlyAdapter)
     status = {"events": 0, "messages": 0, "last_event_utc": None}

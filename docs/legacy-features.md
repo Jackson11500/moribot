@@ -6,7 +6,11 @@
 
 只有私有白名单中的本人可以触发回复。在获准测试群发送纯文字指令即可，无需 @。每个群绑定一个命名权限组，权限组列出允许执行的功能模块。多个群可以共用一套设置。好友私聊支持问候、指南、`你好` 和权限总表。[接收入口](../receive_only/receiver.py) · [指令实现](../receive_only/legacy_commands.py)
 
-在测试群可以把真正的 @机器人 放在指令开头或结尾。先按群权限匹配指令。启用 `ai_dialogue` 的群中，本人直接 @ 茉莉且未命中指令时，DeepSeek 会按对话风格稿回答。单独 @ 也可应声。每次推理只使用本条文字和风格稿。群内文字及图片回复都引用触发它的原消息。引用消息、同时 @ 多人或 @ 全体不会触发。当前聊天短句、旧词库和仿写方法见[对白表](../.agents/skills/moribot-dialogue/references/dialogue-table.md)和[对话风格 skill](../.agents/skills/moribot-dialogue/SKILL.md)。
+在测试群直接 @ 茉莉，或引用一条消息再 @ 茉莉，都会先按群权限检查指令。未命中指令且本群已启用 `ai_dialogue` 时，DeepSeek 按茉莉的口吻接话。单独 @ 也可应声。群内文字和图片都引用本次提问。历史短句与写法见[对白表](../.agents/skills/moribot-dialogue/references/dialogue-table.md)和[对话 skill](../.agents/skills/moribot-dialogue/SKILL.md)。
+
+模型用 `current` 读取提问，用 `quote` 读取被引消息。两者各自带有群号、消息号、发送时间、作者 QQ、昵称、群名片及群角色。称呼优先取群名片，其次取昵称。引用仅在同群最近收到的 256 条普通消息内查找，有效期 30 分钟。找不到时保留引用号并标出原文缺失。QQ 自动带上的原作者 @ 可通过缓存核对，其他多人 @、@ 全体和单独引用仍然静默。
+
+在部署电脑上执行 `ssh moribot-openqq moribot-dialogues` 可看最近 10 次调用，含提问人、引用、原话、回复及状态。`ssh moribot-openqq moribot-dialogues --id 1` 可查看指定编号的原始事件、实际请求和模型原始响应。`--limit 30` 可扩展列表。记录从新版启用起保存在服务器私有 SQLite 库中，状态反映模型调用结果，QQ 客户端送达需在群里确认。
 
 | 发送内容 | 当前回复 |
 |---|---|
